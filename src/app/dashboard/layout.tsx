@@ -31,14 +31,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <TimerProvider>
-      <div className="fixed inset-0 flex flex-col bg-gray-50">
-        {/* Fixed header - respects iOS status bar */}
+      <div
+        className="fixed inset-0 flex flex-col bg-gray-50"
+        style={{
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
+        {/* Fixed header */}
         <div className="shrink-0 z-40 bg-white">
           <AppHeader />
         </div>
 
         {/* Scrollable content */}
-        <main className="flex-1 overflow-y-auto max-w-lg w-full mx-auto pb-20">
+        <main className="flex-1 overflow-y-auto max-w-lg w-full mx-auto">
           {children}
         </main>
 

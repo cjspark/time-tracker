@@ -5,12 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Annuli',
   webDir: 'out',
   ios: {
-    contentInset: 'always',
-  },
-  plugins: {
-    CapacitorHttp: {
-      enabled: false,
-    },
+    contentInset: 'never',
   },
 };
 
