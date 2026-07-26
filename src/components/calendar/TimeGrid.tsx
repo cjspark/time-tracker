@@ -131,7 +131,7 @@ const TimeGrid = forwardRef<TimeGridHandle, Props>(function TimeGrid(
           </div>
 
           {/* Grid area */}
-          <div className="relative flex flex-1 border-l border-gray-100" style={{ height: totalHeight, touchAction: 'none' }}>
+          <div className="relative flex flex-1 border-l border-gray-100" style={{ height: totalHeight }}>
             {HOURS.map((h) => (
               <div
                 key={h}

@@ -25,13 +25,14 @@ export type TimeEntryForm = {
   mood: number | null
 }
 
-export function emptyTimeEntryForm(date = '', startMin = 540): TimeEntryForm {
+export function emptyTimeEntryForm(date = '', startMin = 540, endMin?: number): TimeEntryForm {
   const snap = Math.round(startMin / 15) * 15
   const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
+  const defaultEnd = Math.min(snap + 60, GRID_END_HOUR * 60 - 15)
   return {
     date,
     start_time: toHHMM(snap),
-    end_time: toHHMM(Math.min(snap + 60, GRID_END_HOUR * 60 - 15)),
+    end_time: toHHMM(endMin ?? defaultEnd),
     hobby: HOBBY_LIST[0].label,
     color: HOBBY_LIST[0].color,
     notes: '',

@@ -64,9 +64,9 @@ export default function CalendarView({ view }: Props) {
 
   if (!anchor) return null
 
-  function openCreate(date: string, startMinutes: number, clientX: number, clientY: number) {
+  function openCreate(date: string, startMinutes: number, clientX: number, clientY: number, endMinutes?: number) {
     setEditingId(null)
-    setForm(emptyTimeEntryForm(date, startMinutes))
+    setForm(emptyTimeEntryForm(date, startMinutes, endMinutes))
     setPopupPos({ x: clientX, y: clientY })
   }
 
