@@ -115,7 +115,7 @@ const TimeGrid = forwardRef<TimeGridHandle, Props>(function TimeGrid(
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <DayHeader dates={dates} anchor={anchor} />
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
         <div className="flex" style={{ height: totalHeight }}>
           {/* Time gutter */}
           <div className="shrink-0 relative" style={{ width: GUTTER_W, height: totalHeight }}>
@@ -131,7 +131,7 @@ const TimeGrid = forwardRef<TimeGridHandle, Props>(function TimeGrid(
           </div>
 
           {/* Grid area */}
-          <div className="relative flex flex-1 border-l border-gray-100" style={{ height: totalHeight }}>
+          <div className="relative flex flex-1 border-l border-gray-100" style={{ height: totalHeight, touchAction: 'none' }}>
             {HOURS.map((h) => (
               <div
                 key={h}
