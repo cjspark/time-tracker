@@ -11,6 +11,7 @@ export type TimeEntry = {
   hobby: string
   color: string
   notes: string | null
+  mood: number | null  // 1-5
   created_at: string
 }
 
@@ -21,17 +22,20 @@ export type TimeEntryForm = {
   hobby: string
   color: string
   notes: string
+  mood: number | null
 }
 
 export function emptyTimeEntryForm(date = '', startMin = 540): TimeEntryForm {
+  const snap = Math.round(startMin / 15) * 15
   const toHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
   return {
     date,
-    start_time: toHHMM(startMin),
-    end_time: toHHMM(Math.min(startMin + 60, GRID_END_HOUR * 60 - 1)),
+    start_time: toHHMM(snap),
+    end_time: toHHMM(Math.min(snap + 60, GRID_END_HOUR * 60 - 15)),
     hobby: HOBBY_LIST[0].label,
     color: HOBBY_LIST[0].color,
     notes: '',
+    mood: null,
   }
 }
 
@@ -65,21 +69,23 @@ export function minutesToHHMM(m: number): string {
 }
 
 export function addDays(dateStr: string, n: number): string {
-  const d = new Date(dateStr)
-  d.setDate(d.getDate() + n)
-  return d.toISOString().slice(0, 10)
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d + n)
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
 }
 
 export function todayStr(): string {
-  return new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
 export function getMonday(dateStr: string): string {
-  const d = new Date(dateStr)
-  const day = d.getDay()
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  const day = date.getDay()
   const diff = (day === 0 ? -6 : 1 - day)
-  d.setDate(d.getDate() + diff)
-  return d.toISOString().slice(0, 10)
+  date.setDate(date.getDate() + diff)
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`
 }
 
 // ── Data Hook ──────────────────────────────────────────
@@ -116,6 +122,7 @@ export function useTimeEntries(dates: string[]) {
       hobby: form.hobby,
       color: form.color,
       notes: form.notes || null,
+      mood: form.mood ?? null,
     }
     if (id) {
       const { error } = await supabase.from('time_entries').update(payload).eq('id', id)

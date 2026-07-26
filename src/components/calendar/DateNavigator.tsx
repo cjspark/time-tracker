@@ -19,8 +19,10 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 const MONTHS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
 function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return { month: MONTHS[d.getMonth()], day: d.getDate(), weekday: WEEKDAYS[d.getDay()] }
+  // Parse as local date to avoid UTC offset shifting the day
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
+  return { month: MONTHS[date.getMonth()], day: date.getDate(), weekday: WEEKDAYS[date.getDay()] }
 }
 
 function getLabel(view: View, anchor: string): string {

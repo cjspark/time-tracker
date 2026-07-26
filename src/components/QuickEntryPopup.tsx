@@ -2,7 +2,9 @@
 
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
-import { TimeEntryForm, HOBBY_LIST, minutesToHHMM, timeToMinutes } from './calendar/useTimeEntries'
+import { TimeEntryForm, minutesToHHMM, timeToMinutes } from './calendar/useTimeEntries'
+import { useAllHobbies } from '@/lib/useAllHobbies'
+import TimeSelect from './TimeSelect'
 
 const POPUP_W = 232
 
@@ -18,6 +20,7 @@ type Props = {
 
 export default function QuickEntryPopup({ clientX, clientY, form, saving, onChange, onSave, onClose }: Props) {
   const ref = useRef<HTMLDivElement>(null)
+  const hobbyList = useAllHobbies()
 
   // Click outside to close
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function QuickEntryPopup({ clientX, clientY, form, saving, onChan
 
       {/* 爱好选择 */}
       <div className="grid grid-cols-3 gap-1.5 mb-3">
-        {HOBBY_LIST.map((h) => (
+        {hobbyList.map((h) => (
           <button
             key={h.label}
             type="button"
@@ -84,7 +87,7 @@ export default function QuickEntryPopup({ clientX, clientY, form, saving, onChan
             }}
           >
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: h.color }} />
-            {h.label}
+            {h.displayLabel}
           </button>
         ))}
       </div>
@@ -93,32 +96,43 @@ export default function QuickEntryPopup({ clientX, clientY, form, saving, onChan
       <div className="grid grid-cols-2 gap-2 mb-3">
         <div>
           <label className="block text-xs text-gray-400 mb-0.5">开始</label>
-          <input
-            type="time"
-            value={form.start_time}
-            onChange={(e) => onChange({ ...form, start_time: e.target.value })}
-            className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <TimeSelect value={form.start_time} onChange={v => onChange({ ...form, start_time: v })} className="w-full" />
         </div>
         <div>
           <label className="block text-xs text-gray-400 mb-0.5">结束</label>
-          <input
-            type="time"
-            value={form.end_time}
-            onChange={(e) => onChange({ ...form, end_time: e.target.value })}
-            className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <TimeSelect value={form.end_time} onChange={v => onChange({ ...form, end_time: v })} className="w-full" />
         </div>
       </div>
 
-      {/* 备注 */}
-      <input
-        type="text"
-        placeholder="备注（选填）"
-        value={form.notes}
-        onChange={(e) => onChange({ ...form, notes: e.target.value })}
-        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs mb-3 focus:outline-none focus:ring-1 focus:ring-blue-500"
-      />
+      {/* 备注 + 心情 */}
+      <div className="flex gap-1.5 items-center mb-3">
+        <input
+          type="text"
+          placeholder="备注（选填）"
+          value={form.notes}
+          onChange={(e) => onChange({ ...form, notes: e.target.value })}
+          className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
+        <div className="flex gap-0.5 border border-gray-200 rounded-lg px-1.5 py-1 bg-gray-50 shrink-0">
+          {([
+            { v: 1, e: '😩' },
+            { v: 2, e: '😕' },
+            { v: 3, e: '😐' },
+            { v: 4, e: '🙂' },
+            { v: 5, e: '😄' },
+          ] as const).map(({ v, e }) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => onChange({ ...form, mood: (form.mood ?? 0) === v ? null : v })}
+              className="text-sm leading-none transition-all"
+              style={{ opacity: form.mood === null ? 0.35 : form.mood === v ? 1 : 0.2, transform: form.mood === v ? 'scale(1.2)' : 'scale(1)' }}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* 保存 */}
       <button

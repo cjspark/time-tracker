@@ -29,20 +29,31 @@ function navStep(view: View): number {
 }
 
 export default function CalendarView({ view }: Props) {
-  const today = todayStr()
-  const [anchor, setAnchor] = useState(today)
+  const [today, setToday] = useState<string>('')
+  const [anchor, setAnchor] = useState<string>('')
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<TimeEntryForm>(emptyTimeEntryForm(today))
+  const [form, setForm] = useState<TimeEntryForm>(() => emptyTimeEntryForm(''))
   const [saving, setSaving] = useState(false)
   const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null)
   const [pendingScroll, setPendingScroll] = useState<number | null>(null)
   const gridRef = useRef<TimeGridHandle>(null)
 
-  const dates = useMemo(() => getDates(anchor, view), [anchor, view])
+  // Client-only: compute today in local timezone
+  useEffect(() => {
+    const t = todayStr()
+    setToday(t)
+    setAnchor(t)
+    setForm(emptyTimeEntryForm(t))
+    const update = () => setToday(todayStr())
+    window.addEventListener('focus', update)
+    return () => window.removeEventListener('focus', update)
+  }, [])
+
+  const dates = useMemo(() => anchor ? getDates(anchor, view) : [], [anchor, view])
   const { entries, saveEntry, deleteEntry } = useTimeEntries(dates)
 
-  const isToday = view === 'day' ? anchor === today : dates.includes(today)
+  const isToday = anchor ? (view === 'day' ? anchor === today : dates.includes(today)) : false
 
   // Execute pending scroll after anchor/dates change
   useEffect(() => {
@@ -50,6 +61,8 @@ export default function CalendarView({ view }: Props) {
     gridRef.current?.scrollToTime(pendingScroll)
     setPendingScroll(null)
   }, [anchor, pendingScroll])
+
+  if (!anchor) return null
 
   function openCreate(date: string, startMinutes: number, clientX: number, clientY: number) {
     setEditingId(null)
@@ -66,6 +79,7 @@ export default function CalendarView({ view }: Props) {
       hobby: entry.hobby,
       color: entry.color,
       notes: entry.notes ?? '',
+      mood: entry.mood ?? null,
     })
     setModalOpen(true)
   }

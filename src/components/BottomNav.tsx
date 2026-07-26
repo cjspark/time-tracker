@@ -2,11 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CalendarDays, Heart } from 'lucide-react'
+import { CalendarDays, Heart, TreePine, BarChart2 } from 'lucide-react'
 
 const tabs = [
   { href: '/dashboard/calendar', label: '日历', icon: CalendarDays },
-  { href: '/dashboard/hobbies', label: '爱好', icon: Heart },
+  { href: '/dashboard/tree', label: '生命树', icon: TreePine },
+  { href: '/dashboard/hobbies', label: '活动', icon: Heart },
+  { href: '/dashboard/review', label: '复盘', icon: BarChart2 },
 ]
 
 export default function BottomNav() {

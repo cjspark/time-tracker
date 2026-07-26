@@ -28,7 +28,8 @@ function DayHeader({ dates, anchor }: { dates: string[]; anchor: string }) {
   return (
     <div className="flex shrink-0 border-b border-gray-200 bg-white" style={{ paddingLeft: GUTTER_W }}>
       {dates.map((date) => {
-        const d = new Date(date)
+        const [y, mo, day] = date.split('-').map(Number)
+        const d = new Date(y, mo - 1, day)
         const isAnchor = date === anchor
         const isTodayOnly = date === today && !isAnchor
         return (

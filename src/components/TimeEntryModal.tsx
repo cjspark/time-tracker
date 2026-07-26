@@ -2,7 +2,9 @@
 
 import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
-import { TimeEntryForm, HOBBY_LIST } from './calendar/useTimeEntries'
+import { TimeEntryForm } from './calendar/useTimeEntries'
+import { useAllHobbies } from '@/lib/useAllHobbies'
+import TimeSelect from './TimeSelect'
 
 type Props = {
   open: boolean
@@ -20,6 +22,7 @@ export default function TimeEntryModal({
   onChange, onSave, onDelete, onClose,
 }: Props) {
   const firstRef = useRef<HTMLInputElement>(null)
+  const hobbyList = useAllHobbies()
 
   useEffect(() => {
     if (open) setTimeout(() => firstRef.current?.focus(), 100)
@@ -30,7 +33,7 @@ export default function TimeEntryModal({
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-t-2xl px-4 pt-4 pb-8 max-w-lg w-full mx-auto max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-t-2xl px-4 pt-4 pb-4 max-w-lg w-full mx-auto max-h-[75vh] overflow-y-auto mb-16">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-900">
             {isEditing ? '编辑记录' : '添加时间记录'}
@@ -45,7 +48,7 @@ export default function TimeEntryModal({
           <div>
             <label className="block text-xs text-gray-500 mb-2">爱好</label>
             <div className="grid grid-cols-3 gap-2">
-              {HOBBY_LIST.map((h) => (
+              {hobbyList.map((h) => (
                 <button
                   key={h.label}
                   type="button"
@@ -65,7 +68,7 @@ export default function TimeEntryModal({
                     className="w-2 h-2 rounded-full shrink-0"
                     style={{ backgroundColor: h.color }}
                   />
-                  {h.label}
+                  {h.displayLabel}
                 </button>
               ))}
             </div>
@@ -87,36 +90,43 @@ export default function TimeEntryModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-500 mb-1">开始时间</label>
-              <input
-                type="time"
-                value={form.start_time}
-                onChange={(e) => onChange({ ...form, start_time: e.target.value })}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <TimeSelect value={form.start_time} onChange={v => onChange({ ...form, start_time: v })} className="w-full" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">结束时间</label>
-              <input
-                type="time"
-                value={form.end_time}
-                onChange={(e) => onChange({ ...form, end_time: e.target.value })}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <TimeSelect value={form.end_time} onChange={v => onChange({ ...form, end_time: v })} className="w-full" />
             </div>
           </div>
 
-          {/* 备注 */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">
-              备注 <span className="text-gray-400">（选填）</span>
-            </label>
+          {/* 备注 + 心情 */}
+          <div className="flex gap-2 items-start">
             <input
               type="text"
-              placeholder="如：跑步5km，心率145"
+              placeholder="备注（选填）"
               value={form.notes}
               onChange={(e) => onChange({ ...form, notes: e.target.value })}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {/* Mood picker */}
+            <div className="flex gap-1 border border-gray-200 rounded-xl px-2 py-1.5 bg-gray-50 shrink-0">
+              {([
+                { v: 1, e: '😩' },
+                { v: 2, e: '😕' },
+                { v: 3, e: '😐' },
+                { v: 4, e: '🙂' },
+                { v: 5, e: '😄' },
+              ] as const).map(({ v, e }) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => onChange({ ...form, mood: form.mood === v ? null : v })}
+                  className="text-base leading-none transition-all"
+                  style={{ opacity: form.mood === null ? 0.4 : form.mood === v ? 1 : 0.25, transform: form.mood === v ? 'scale(1.25)' : 'scale(1)' }}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 操作按钮 */}
