@@ -10,8 +10,6 @@ export function useLongPress(
   const fired = useRef(false)
 
   function onTouchStart(e: React.TouchEvent) {
-    // Prevent iOS context menu / text selection on long press
-    e.preventDefault()
     fired.current = false
     startPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
     timer.current = setTimeout(() => {
