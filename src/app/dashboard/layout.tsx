@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <TimerProvider>
-      <div className="fixed inset-0 flex flex-col bg-gray-50">
+      <div className="fixed inset-0 flex flex-col bg-gray-50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         {/* Fixed header */}
         <div className="shrink-0 z-40 bg-white">
           <AppHeader />
