@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { ChevronDown, ChevronRight, Pencil, Check, Plus, X, PauseCircle, PlayCircle } from 'lucide-react'
 import { useHobbyStats } from './calendar/useHobbyStats'
 import WeeklyHabitGrid from './tree/WeeklyHabitGrid'
+import { getPref, setPref } from '@/lib/prefs'
 
 const BASE_CATEGORIES = ['工作', '输入', '输出', '健康', '投资', '瞎忙'] as const
 
@@ -39,9 +40,7 @@ function ls<T>(key: string, fallback: T): T {
   try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback } catch { return fallback }
 }
 function lsSave(key: string, val: unknown) {
-  localStorage.setItem(key, JSON.stringify(val))
-  // Notify same-tab listeners (storage event only fires for other tabs natively)
-  window.dispatchEvent(new Event('storage'))
+  setPref(key, val)
 }
 
 export default function HobbiesView() {
@@ -61,16 +60,35 @@ export default function HobbiesView() {
   const draggedCat = useRef<string | null>(null)
 
   useEffect(() => {
-    setCustomCats(ls('hobby_custom_categories', []))
-    setCustomHobbies(ls('hobby_custom_hobbies', []))
-    setHiddenHobbies(ls('hobby_hidden', []))
-    setHiddenCategories(ls('hobby_hidden_categories', []))
-    setCatRenames(ls('hobby_cat_renames', {}))
-    setColorOverrides(ls('hobby_color_overrides', {}))
-    setHobbyRenames(ls('hobby_label_renames', {}))
-    setInactiveHobbies(ls('hobby_inactive', []))
-    setCatOrder(ls('hobby_cat_order', []))
-    setTimeCategoryMap(ls('hobby_time_category', {}))
+    async function loadPrefs() {
+      const [
+        customCatsVal, customHobbiesVal, hiddenHobbiesVal, hiddenCatsVal,
+        catRenamesVal, colorOverridesVal, hobbyRenamesVal, inactiveVal,
+        catOrderVal, timeCatVal,
+      ] = await Promise.all([
+        getPref('hobby_custom_categories', [] as string[]),
+        getPref('hobby_custom_hobbies', [] as {label:string;color:string}[]),
+        getPref('hobby_hidden', [] as string[]),
+        getPref('hobby_hidden_categories', [] as string[]),
+        getPref('hobby_cat_renames', {} as Record<string,string>),
+        getPref('hobby_color_overrides', {} as Record<string,string>),
+        getPref('hobby_label_renames', {} as Record<string,string>),
+        getPref('hobby_inactive', [] as string[]),
+        getPref('hobby_cat_order', [] as string[]),
+        getPref('hobby_time_category', {} as Record<string,TimeCategory>),
+      ])
+      setCustomCats(customCatsVal)
+      setCustomHobbies(customHobbiesVal)
+      setHiddenHobbies(hiddenHobbiesVal)
+      setHiddenCategories(hiddenCatsVal)
+      setCatRenames(catRenamesVal)
+      setColorOverrides(colorOverridesVal)
+      setHobbyRenames(hobbyRenamesVal)
+      setInactiveHobbies(inactiveVal)
+      setCatOrder(catOrderVal)
+      setTimeCategoryMap(timeCatVal)
+    }
+    loadPrefs()
   }, [])
 
   const { stats, loading, updateHistorical, updateCategory } = useHobbyStats(customHobbies, hiddenHobbies)

@@ -12,6 +12,7 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 function resolveColor(hobby: string, fallback: string): string {
+  // Use localStorage for sync reads (already kept in sync by setPref)
   try {
     const timeCatMap: Record<string, TimeCategory> = JSON.parse(localStorage.getItem('hobby_time_category') ?? '{}')
     const timecat = timeCatMap[hobby]

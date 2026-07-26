@@ -2,17 +2,16 @@ import { useState, useEffect } from 'react'
 import { HOBBY_LIST } from '@/components/calendar/useTimeEntries'
 import { TIME_CATEGORIES } from '@/components/HobbiesView'
 import type { TimeCategory } from '@/components/HobbiesView'
+import { getPref } from '@/lib/prefs'
 
 export type HobbyItem = { label: string; displayLabel: string; color: string }
 
-function ls<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback
-  try { return JSON.parse(localStorage.getItem(key) ?? 'null') ?? fallback } catch { return fallback }
-}
-
-function resolveColor(label: string, baseColor: string): string {
-  const overrides: Record<string, string> = ls('hobby_color_overrides', {})
-  const timeCatMap: Record<string, TimeCategory> = ls('hobby_time_category', {})
+function resolveColorFromMaps(
+  label: string,
+  baseColor: string,
+  timeCatMap: Record<string, TimeCategory>,
+  overrides: Record<string, string>
+): string {
   const timecat = timeCatMap[label]
   if (timecat) {
     const found = TIME_CATEGORIES.find(t => t.key === timecat)
@@ -27,16 +26,20 @@ export function useAllHobbies(): HobbyItem[] {
   )
 
   useEffect(() => {
-    function build() {
-      const custom: { label: string; color: string }[] = ls('hobby_custom_hobbies', [])
-      const hidden: string[]   = ls('hobby_hidden', [])
-      const inactive: string[] = ls('hobby_inactive', [])
-      const renames: Record<string, string> = ls('hobby_label_renames', {})
+    async function build() {
+      const [custom, hidden, inactive, overrides, renames, timeCatMap] = await Promise.all([
+        getPref('hobby_custom_hobbies', [] as { label: string; color: string }[]),
+        getPref('hobby_hidden', [] as string[]),
+        getPref('hobby_inactive', [] as string[]),
+        getPref('hobby_color_overrides', {} as Record<string, string>),
+        getPref('hobby_label_renames', {} as Record<string, string>),
+        getPref('hobby_time_category', {} as Record<string, TimeCategory>),
+      ])
 
       const base = [...HOBBY_LIST].map(h => ({
         label: h.label,
         displayLabel: renames[h.label] ?? h.label,
-        color: resolveColor(h.label, h.color),
+        color: resolveColorFromMaps(h.label, h.color, timeCatMap, overrides),
       }))
 
       const customItems = custom
@@ -44,7 +47,7 @@ export function useAllHobbies(): HobbyItem[] {
         .map(h => ({
           label: h.label,
           displayLabel: renames[h.label] ?? h.label,
-          color: resolveColor(h.label, h.color),
+          color: resolveColorFromMaps(h.label, h.color, timeCatMap, overrides),
         }))
 
       const all = [...base, ...customItems].filter(
