@@ -35,8 +35,8 @@ export default function DayColumn({ date, entries, onBlockTap, onGridInteract }:
 
   return (
     <div
-      className="relative flex-1 border-r border-gray-100 last:border-r-0"
-      style={{ height: totalHeight }}
+      className="relative flex-1 border-r border-gray-100 last:border-r-0 select-none"
+      style={{ height: totalHeight, WebkitUserSelect: 'none', userSelect: 'none', WebkitTouchCallout: 'none' } as React.CSSProperties}
       onContextMenu={handleContextMenu}
       {...longPress}
     >
