@@ -77,13 +77,23 @@ export default function TimeEntryModal({
           {/* 日期 */}
           <div>
             <label className="block text-xs text-gray-500 mb-1">日期</label>
-            <input
-              type="date"
-              ref={firstRef}
-              value={form.date}
-              onChange={(e) => onChange({ ...form, date: e.target.value })}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="relative">
+              <div
+                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 bg-white flex items-center justify-between cursor-pointer"
+                onClick={() => (document.getElementById('date-input-modal') as HTMLInputElement)?.showPicker?.()}
+              >
+                <span>{form.date ? new Date(form.date + 'T12:00:00').toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }) : '选择日期'}</span>
+                <span className="text-gray-400 text-xs">📅</span>
+              </div>
+              <input
+                id="date-input-modal"
+                type="date"
+                value={form.date}
+                onChange={(e) => onChange({ ...form, date: e.target.value })}
+                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                tabIndex={-1}
+              />
+            </div>
           </div>
 
           {/* 开始 / 结束时间 */}
