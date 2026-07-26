@@ -31,13 +31,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <TimerProvider>
-      <div className="min-h-screen bg-gray-50">
-        <div className="sticky top-0 z-40 bg-white">
+      <div className="fixed inset-0 flex flex-col bg-gray-50">
+        {/* Fixed header */}
+        <div className="shrink-0 z-40 bg-white">
           <AppHeader />
         </div>
-        <main className="pb-20 max-w-lg mx-auto">
+
+        {/* Scrollable content */}
+        <main className="flex-1 overflow-y-auto max-w-lg w-full mx-auto pb-20">
           {children}
         </main>
+
         <TimerBar />
         <TimelineFooter />
         <BottomNav />
