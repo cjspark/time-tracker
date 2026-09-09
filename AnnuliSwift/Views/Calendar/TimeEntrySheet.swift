@@ -93,28 +93,58 @@ struct TimeEntrySheet: View {
     }
 }
 
-// MARK: - Simple time picker
+// MARK: - 15-minute-snapping time picker
 
 struct TimePicker: View {
     let label: String
     @Binding var time: String  // "HH:MM"
 
-    private var date: Binding<Date> {
+    private var hour: Binding<Int> {
         Binding(
-            get: {
-                let mins = time.timeToMinutes()
-                return Calendar.current.date(bySettingHour: mins / 60, minute: mins % 60, second: 0, of: Date()) ?? Date()
-            },
-            set: {
-                let h = Calendar.current.component(.hour, from: $0)
-                let m = Calendar.current.component(.minute, from: $0)
+            get: { time.timeToMinutes() / 60 },
+            set: { h in
+                let m = (time.timeToMinutes() % 60 / 15) * 15
                 time = String(format: "%02d:%02d", h, m)
             }
         )
     }
 
+    private var quarterIndex: Binding<Int> {
+        Binding(
+            get: { (time.timeToMinutes() % 60) / 15 },
+            set: { qi in
+                let h = time.timeToMinutes() / 60
+                time = String(format: "%02d:%02d", h, qi * 15)
+            }
+        )
+    }
+
     var body: some View {
-        DatePicker(label, selection: date, displayedComponents: .hourAndMinute)
-            .environment(\.locale, Locale(identifier: "zh_CN"))
+        HStack {
+            Text(label)
+                .foregroundColor(.secondary)
+            Spacer()
+            HStack(spacing: 0) {
+                Picker("时", selection: hour) {
+                    ForEach(0..<24, id: \.self) { h in
+                        Text(String(format: "%02d", h)).tag(h)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(width: 52, height: 100)
+                .clipped()
+
+                Text(":").font(.system(size: 17, weight: .medium))
+
+                Picker("分", selection: quarterIndex) {
+                    ForEach(0..<4, id: \.self) { qi in
+                        Text(String(format: "%02d", qi * 15)).tag(qi)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(width: 52, height: 100)
+                .clipped()
+            }
+        }
     }
 }

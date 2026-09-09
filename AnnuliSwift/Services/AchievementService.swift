@@ -46,6 +46,11 @@ struct AchievementService {
         return result[0]
     }
 
+    static func rename(id: UUID, name: String) async throws {
+        struct Patch: Encodable { let name: String }
+        try await supabase.from("achievements").update(Patch(name: name)).eq("id", value: id).execute()
+    }
+
     static func updateTarget(id: UUID, targetValue: Double) async throws {
         struct Patch: Encodable { let targetValue: Double
             enum CodingKeys: String, CodingKey { case targetValue = "target_value" }

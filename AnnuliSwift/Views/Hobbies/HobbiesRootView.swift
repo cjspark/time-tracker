@@ -21,6 +21,10 @@ struct HobbiesRootView: View {
     @State private var renamingCat: String?
     @State private var renameDraft = ""
 
+    // Undo-hide toast
+    @State private var undoHobbyLabel: String?
+    @State private var undoTask: Task<Void, Never>?
+
     // Computed
     private var habitWeekDates: [Date] {
         let anchor = Calendar.current.date(byAdding: .weekOfYear, value: habitWeekOffset, to: Date()) ?? Date()
@@ -222,7 +226,16 @@ struct HobbiesRootView: View {
                     },
                     onSetInactive: { Task { await prefs.setInactive(hobby: hobby.label) } },
                     onSetActive:   { Task { await prefs.setActive(hobby: hobby.label) } },
-                    onHide:        { Task { await prefs.hide(hobby: hobby.label) } }
+                    onHide:        {
+                        let label = hobby.label
+                        Task { await prefs.hide(hobby: label) }
+                        undoTask?.cancel()
+                        undoHobbyLabel = label
+                        undoTask = Task {
+                            try? await Task.sleep(nanoseconds: 5_000_000_000)
+                            if !Task.isCancelled { undoHobbyLabel = nil }
+                        }
+                    }
                 )
             }
             .sheet(isPresented: $showAddHobby) {
@@ -247,6 +260,32 @@ struct HobbiesRootView: View {
                     Task { await treeVM.addAchievement(insert: insert) }
                 }
                 .environmentObject(prefs)
+            }
+            .overlay(alignment: .bottom) {
+                if let label = undoHobbyLabel {
+                    HStack(spacing: 12) {
+                        Text("已隐藏「\(label)」")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white)
+                        Spacer()
+                        Button("撤销") {
+                            undoTask?.cancel()
+                            undoTask = nil
+                            undoHobbyLabel = nil
+                            Task { await prefs.unhide(hobby: label) }
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.yellow)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color(.label).opacity(0.88))
+                    .cornerRadius(12)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .animation(.easeInOut(duration: 0.25), value: undoHobbyLabel)
+                }
             }
         }
     }

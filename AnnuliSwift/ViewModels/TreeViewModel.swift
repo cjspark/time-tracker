@@ -74,6 +74,11 @@ class TreeViewModel: ObservableObject {
         removeAchievementFromBranch(id: id)
     }
 
+    func renameAchievement(id: UUID, name: String) async {
+        try? await AchievementService.rename(id: id, name: name)
+        updateAchievementInBranch(id: id) { $0.name = name }
+    }
+
     func archiveAchievement(id: UUID) async {
         try? await AchievementService.archive(id: id)
         updateAchievementInBranch(id: id) { $0.archivedAt = ISO8601DateFormatter().string(from: Date()) }
