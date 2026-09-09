@@ -12,8 +12,8 @@ XCODE_PROJ="$REPO/Annuli/Annuli.xcodeproj"
 echo "→ git pull..."
 git -C "$REPO" pull
 
-echo "→ 同步 Swift 文件到 Xcode 目录..."
-rsync -a --include="*.swift" --include="*/" --exclude="*" \
+echo "→ 同步 Swift 文件到 Xcode 目录（跳过 Package.swift）..."
+rsync -a --include="*.swift" --include="*/" --exclude="Package.swift" --exclude="*" \
   "$SWIFT_SRC/" "$XCODE_SRC/"
 
 echo "→ 检查并添加新文件到 Xcode 项目..."

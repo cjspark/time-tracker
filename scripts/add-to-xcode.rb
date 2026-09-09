@@ -57,6 +57,7 @@ new_count = 0
 
 Dir.glob("#{swift_src_dir}/**/*.swift").sort.each do |swift_path|
   filename = File.basename(swift_path)
+  next if filename == 'Package.swift'   # SPM manifest, must not be compiled as app source
   next if existing_basenames.include?(filename)
 
   rel   = Pathname.new(swift_path).relative_path_from(Pathname.new(swift_src_dir)).to_s

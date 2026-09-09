@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # scripts/fix-duplicates.rb
-# 清理 Xcode 编译阶段里同文件名但不同路径的重复条目
+# 1) 按文件名去重编译条目
+# 2) 从编译阶段移除 Package.swift（不应被编译为 app 源码）
 
 begin
   require 'xcodeproj'
@@ -18,8 +19,20 @@ end
 project = Xcodeproj::Project.open(project_path)
 target  = project.targets.find { |t| t.product_type == 'com.apple.product-type.application' }
 phase   = target.source_build_phase
+changed = false
 
-# 按文件名（basename）分组，找出重名的条目
+# ── 1. 移除 Package.swift（SPM 清单文件，不应参与 app 编译）──────────
+pkg_entries = phase.files.select { |bf| File.basename(bf.file_ref&.path.to_s) == 'Package.swift' }
+if pkg_entries.any?
+  puts "移除 Package.swift 出编译阶段..."
+  pkg_entries.each do |bf|
+    puts "  - #{bf.file_ref&.path}"
+    phase.files.delete(bf)
+  end
+  changed = true
+end
+
+# ── 2. 按 basename 去重 ──────────────────────────────────────────────
 by_name = Hash.new { |h, k| h[k] = [] }
 phase.files.each do |bf|
   path = bf.file_ref&.path.to_s
@@ -27,26 +40,20 @@ phase.files.each do |bf|
   by_name[File.basename(path)] << bf
 end
 
-# 只保留每个文件名里路径包含 "Annuli/Annuli" 或最短的那一个，其余删除
-to_remove = []
 by_name.each do |name, bfs|
   next if bfs.size <= 1
-  puts "  重复: #{name} (#{bfs.size} 份)"
-  bfs.each { |bf| puts "         #{bf.file_ref&.path}" }
-
-  # 优先保留路径里不含 AnnuliSwift 的（即 Annuli/Annuli/ 目录下的正式文件）
+  puts "重复: #{name}"
   keeper = bfs.find { |bf| !bf.file_ref&.path.to_s.include?('AnnuliSwift') } || bfs.first
-  to_remove.concat(bfs - [keeper])
+  (bfs - [keeper]).each do |bf|
+    puts "  移除: #{bf.file_ref&.path}"
+    phase.files.delete(bf)
+    changed = true
+  end
 end
 
-if to_remove.empty?
-  puts "✓ 没有发现重复条目（按文件名检查）"
-else
-  puts "\n移除 #{to_remove.size} 个重复条目..."
-  to_remove.each do |bf|
-    puts "  - #{bf.file_ref&.path}"
-    phase.files.delete(bf)
-  end
+if changed
   project.save
   puts "\n✓ 已保存。请在 Xcode 执行 Product → Clean Build Folder (⌘⇧K)，再 ⌘B 编译。"
+else
+  puts "✓ 无需修复"
 end
