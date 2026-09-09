@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 # scripts/fix-duplicates.rb
-# 一次性清理 Xcode 项目编译阶段的重复条目
+# 清理 Xcode 编译阶段里同文件名但不同路径的重复条目
 
 begin
   require 'xcodeproj'
@@ -17,32 +17,36 @@ end
 
 project = Xcodeproj::Project.open(project_path)
 target  = project.targets.find { |t| t.product_type == 'com.apple.product-type.application' }
+phase   = target.source_build_phase
 
-phase = target.source_build_phase
-
-# 以 file_ref.uuid 为 key 找出重复
-seen   = {}
-to_remove = []
-
+# 按文件名（basename）分组，找出重名的条目
+by_name = Hash.new { |h, k| h[k] = [] }
 phase.files.each do |bf|
-  uuid = bf.file_ref&.uuid
-  next unless uuid
-  if seen[uuid]
-    to_remove << bf
-  else
-    seen[uuid] = bf
-  end
+  path = bf.file_ref&.path.to_s
+  next if path.empty?
+  by_name[File.basename(path)] << bf
+end
+
+# 只保留每个文件名里路径包含 "Annuli/Annuli" 或最短的那一个，其余删除
+to_remove = []
+by_name.each do |name, bfs|
+  next if bfs.size <= 1
+  puts "  重复: #{name} (#{bfs.size} 份)"
+  bfs.each { |bf| puts "         #{bf.file_ref&.path}" }
+
+  # 优先保留路径里不含 AnnuliSwift 的（即 Annuli/Annuli/ 目录下的正式文件）
+  keeper = bfs.find { |bf| !bf.file_ref&.path.to_s.include?('AnnuliSwift') } || bfs.first
+  to_remove.concat(bfs - [keeper])
 end
 
 if to_remove.empty?
-  puts "✓ 没有发现重复条目，无需修复"
+  puts "✓ 没有发现重复条目（按文件名检查）"
 else
-  puts "发现 #{to_remove.size} 个重复条目，正在清理..."
+  puts "\n移除 #{to_remove.size} 个重复条目..."
   to_remove.each do |bf|
-    name = bf.file_ref&.path || "(unknown)"
+    puts "  - #{bf.file_ref&.path}"
     phase.files.delete(bf)
-    puts "  移除: #{name}"
   end
   project.save
-  puts "✓ 已保存。请在 Xcode 里执行 Product → Clean Build Folder (⌘⇧K)，再编译。"
+  puts "\n✓ 已保存。请在 Xcode 执行 Product → Clean Build Folder (⌘⇧K)，再 ⌘B 编译。"
 end
