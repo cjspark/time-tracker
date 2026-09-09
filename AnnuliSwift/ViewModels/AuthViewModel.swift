@@ -50,4 +50,15 @@ class AuthViewModel: ObservableObject {
     func signOut() async {
         try? await AuthService.signOut()
     }
+
+    func resetPassword(email: String) async -> Bool {
+        errorMessage = nil
+        do {
+            try await AuthService.resetPassword(email: email)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
 }

@@ -4,8 +4,15 @@ struct LoginView: View {
     @EnvironmentObject var auth: AuthViewModel
     @State private var email = ""
     @State private var password = ""
+    @State private var showPassword = false
     @State private var isRegistering = false
     @FocusState private var focusedField: Field?
+
+    // Forgot password sheet
+    @State private var showForgotSheet = false
+    @State private var resetEmail = ""
+    @State private var resetSent = false
+    @State private var resetLoading = false
 
     enum Field { case email, password }
 
@@ -34,11 +41,43 @@ struct LoginView: View {
                     .background(Color(.secondarySystemBackground))
                     .cornerRadius(10)
 
-                SecureField("密码", text: $password)
+                // Password field with eye toggle
+                HStack {
+                    Group {
+                        if showPassword {
+                            TextField("密码", text: $password)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                        } else {
+                            SecureField("密码", text: $password)
+                        }
+                    }
                     .focused($focusedField, equals: .password)
-                    .padding(14)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(10)
+
+                    Button {
+                        showPassword.toggle()
+                    } label: {
+                        Image(systemName: showPassword ? "eye.slash" : "eye")
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(14)
+                .background(Color(.secondarySystemBackground))
+                .cornerRadius(10)
+
+                // 忘记密码（仅登录模式显示）
+                if !isRegistering {
+                    HStack {
+                        Spacer()
+                        Button("忘记密码？") {
+                            resetEmail = email
+                            resetSent = false
+                            showForgotSheet = true
+                        }
+                        .font(.system(size: 13))
+                        .foregroundColor(.blue)
+                    }
+                }
 
                 if let err = auth.errorMessage {
                     Text(err)
@@ -79,5 +118,92 @@ struct LoginView: View {
             Spacer()
         }
         .background(Color(.systemBackground))
+        .sheet(isPresented: $showForgotSheet) {
+            ForgotPasswordSheet(
+                email: $resetEmail,
+                isSent: $resetSent,
+                isLoading: $resetLoading
+            ) {
+                resetLoading = true
+                let ok = await auth.resetPassword(email: resetEmail)
+                resetLoading = false
+                if ok { resetSent = true }
+            }
+            .presentationDetents([.height(300)])
+        }
+    }
+}
+
+private struct ForgotPasswordSheet: View {
+    @Binding var email: String
+    @Binding var isSent: Bool
+    @Binding var isLoading: Bool
+    var onSend: () async -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text("找回密码")
+                .font(.system(size: 20, weight: .semibold))
+                .padding(.top, 24)
+
+            if isSent {
+                VStack(spacing: 12) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(.green)
+                    Text("重置邮件已发送")
+                        .font(.system(size: 16, weight: .medium))
+                    Text("请检查 \(email) 的收件箱")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                Button("关闭") { dismiss() }
+                    .font(.system(size: 15))
+                    .foregroundColor(.blue)
+                    .padding(.top, 4)
+            } else {
+                Text("输入账号邮箱，我们将发送重置链接")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+
+                TextField("邮箱", text: $email)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .padding(14)
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(10)
+                    .padding(.horizontal, 24)
+
+                Button {
+                    Task { await onSend() }
+                } label: {
+                    Group {
+                        if isLoading {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Text("发送重置邮件")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.white)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(13)
+                    .background(email.isEmpty ? Color.blue.opacity(0.4) : Color.blue)
+                    .cornerRadius(10)
+                }
+                .disabled(email.isEmpty || isLoading)
+                .padding(.horizontal, 24)
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
     }
 }

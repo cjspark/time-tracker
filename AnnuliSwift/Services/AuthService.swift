@@ -14,6 +14,10 @@ struct AuthService {
         try await supabase.auth.signOut()
     }
 
+    static func resetPassword(email: String) async throws {
+        try await supabase.auth.resetPasswordForEmail(email)
+    }
+
     static var currentUserId: UUID? {
         supabase.auth.currentUser?.id
     }
