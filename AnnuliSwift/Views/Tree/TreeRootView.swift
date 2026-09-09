@@ -29,9 +29,9 @@ struct TreeRootView: View {
             .navigationTitle("生命树")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
+                    let currentYear = Calendar.current.component(.year, from: Date())
                     Picker("年份", selection: $vm.selectedYear) {
-                        ForEach((Calendar.current.component(.year, from: Date()) - 3)...
-                                (Calendar.current.component(.year, from: Date())), id: \.self) { y in
+                        ForEach((currentYear - 3)...currentYear, id: \.self) { y in
                             Text("\(y)").tag(y)
                         }
                     }
