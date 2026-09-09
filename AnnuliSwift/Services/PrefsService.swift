@@ -2,26 +2,52 @@ import Foundation
 import Supabase
 
 // PrefsService: read/write user_preferences table with UserDefaults mirror
-actor PrefsService {
+@MainActor
+final class PrefsService {
     static let shared = PrefsService()
     private let defaults = UserDefaults.standard
+
+    // MARK: - DB row (must be outside generic functions)
+
+    private struct UpsertRow: Encodable {
+        let userId: UUID
+        let key: String
+        let value: AnyEncodable
+        enum CodingKeys: String, CodingKey {
+            case key, value
+            case userId = "user_id"
+        }
+    }
+
+    private struct FetchRow: Decodable {
+        let key: String
+        let rawValue: Data
+
+        enum CodingKeys: String, CodingKey { case key; case rawValue = "value" }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            self.key = try c.decode(String.self, forKey: .key)
+            let any = try c.decode(AnyDecodable.self, forKey: .rawValue)
+            self.rawValue = (try? JSONEncoder().encode(any)) ?? Data()
+        }
+    }
 
     // MARK: - Generic read/write
 
     func get<T: Codable>(_ key: PrefsKey, as type: T.Type, fallback: T) async -> T {
-        // Try local cache first (fast path)
         if let cached = localGet(key, as: type) { return cached }
-        // Fetch from Supabase
         guard let userId = AuthService.currentUserId else { return fallback }
         do {
-            let rows: [UserPreferenceRaw] = try await supabase
+            let rows: [FetchRow] = try await supabase
                 .from("user_preferences")
                 .select()
                 .eq("user_id", value: userId)
                 .eq("key", value: key.rawValue)
                 .execute()
                 .value
-            if let row = rows.first, let decoded = try? JSONDecoder().decode(type, from: row.valueData) {
+            if let row = rows.first,
+               let decoded = try? JSONDecoder().decode(type, from: row.rawValue) {
                 localSet(key, value: decoded)
                 return decoded
             }
@@ -34,15 +60,10 @@ actor PrefsService {
         guard let userId = AuthService.currentUserId,
               let data = try? JSONEncoder().encode(value),
               let json = try? JSONSerialization.jsonObject(with: data) else { return }
-
-        struct Row: Encodable {
-            let userId: UUID; let key: String; let value: AnyEncodable
-            enum CodingKeys: String, CodingKey { case key, value; case userId = "user_id" }
-        }
+        let row = UpsertRow(userId: userId, key: key.rawValue, value: AnyEncodable(value: json))
         _ = try? await supabase
             .from("user_preferences")
-            .upsert(["user_id": userId.uuidString, "key": key.rawValue, "value": json],
-                    onConflict: "user_id,key")
+            .upsert(row, onConflict: "user_id,key")
             .execute()
     }
 
@@ -74,38 +95,21 @@ enum PrefsKey: String {
     case hobbyTimeCategory       = "hobby_time_category"
 }
 
-// MARK: - Internal DB row
-
-private struct UserPreferenceRaw: Decodable {
-    let key: String
-    let valueData: Data
-
-    enum CodingKeys: String, CodingKey { case key, value }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.key = try container.decode(String.self, forKey: .key)
-        // Re-encode the raw JSON back to Data for generic decoding
-        let raw = try container.decode(AnyDecodable.self, forKey: .value)
-        self.valueData = (try? JSONEncoder().encode(raw)) ?? Data()
-    }
-}
-
 // MARK: - AnyEncodable / AnyDecodable helpers
 
 struct AnyEncodable: Encodable {
     let value: Any
     func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
+        var c = encoder.singleValueContainer()
         switch value {
-        case let v as [String]:          try container.encode(v)
-        case let v as [String: String]:  try container.encode(v)
-        case let v as [[String: String]]:try container.encode(v)
-        case let v as String:            try container.encode(v)
-        case let v as Int:               try container.encode(v)
-        case let v as Double:            try container.encode(v)
-        case let v as Bool:              try container.encode(v)
-        default: try container.encodeNil()
+        case let v as [String]:           try c.encode(v)
+        case let v as [String: String]:   try c.encode(v)
+        case let v as [[String: String]]: try c.encode(v)
+        case let v as String:             try c.encode(v)
+        case let v as Int:                try c.encode(v)
+        case let v as Double:             try c.encode(v)
+        case let v as Bool:               try c.encode(v)
+        default: try c.encodeNil()
         }
     }
 }
@@ -126,13 +130,13 @@ struct AnyDecodable: Decodable, Encodable {
     func encode(to encoder: Encoder) throws {
         var c = encoder.singleValueContainer()
         switch value {
-        case let v as [String]:          try c.encode(v)
-        case let v as [String: String]:  try c.encode(v)
-        case let v as [[String: String]]:try c.encode(v)
-        case let v as String:            try c.encode(v)
-        case let v as Int:               try c.encode(v)
-        case let v as Double:            try c.encode(v)
-        case let v as Bool:              try c.encode(v)
+        case let v as [String]:           try c.encode(v)
+        case let v as [String: String]:   try c.encode(v)
+        case let v as [[String: String]]: try c.encode(v)
+        case let v as String:             try c.encode(v)
+        case let v as Int:                try c.encode(v)
+        case let v as Double:             try c.encode(v)
+        case let v as Bool:               try c.encode(v)
         default: try c.encodeNil()
         }
     }

@@ -17,7 +17,7 @@ class PrefsViewModel: ObservableObject {
     @Published var catOrder: [String]               = []
     @Published var timeCategoryMap: [String: String] = [:]
 
-    private let svc = PrefsService.shared
+    private var svc: PrefsService { PrefsService.shared }
 
     func load() async {
         async let cc  = svc.get(.hobbyCustomCategories, as: [String].self,              fallback: [])
