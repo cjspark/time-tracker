@@ -17,8 +17,12 @@ class TimerViewModel: ObservableObject {
     init() { restoreFromStorage() }
 
     var formattedElapsed: String {
-        let m = elapsed / 60
+        let h = elapsed / 3600
+        let m = (elapsed % 3600) / 60
         let s = elapsed % 60
+        if h > 0 {
+            return String(format: "%02d:%02d:%02d", h, m, s)
+        }
         return String(format: "%02d:%02d", m, s)
     }
 

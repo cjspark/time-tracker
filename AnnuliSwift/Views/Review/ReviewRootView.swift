@@ -10,32 +10,15 @@ struct ReviewRootView: View {
             ScrollView {
                 if let week = vm.currentWeek {
                     VStack(spacing: 20) {
-                        // Week navigation
-                        HStack {
-                            Button { Task { await vm.goBack(); await vm.load(prefs: prefs) } } label: {
-                                Image(systemName: "chevron.left")
-                            }
-                            Spacer()
-                            Text(week.weekLabel)
-                                .font(.system(size: 15, weight: .medium))
-                            Spacer()
-                            Button { Task { await vm.goForward(); await vm.load(prefs: prefs) } } label: {
-                                Image(systemName: "chevron.right")
-                                    .foregroundColor(vm.weekOffset == 0 ? .secondary : .primary)
-                            }
-                            .disabled(vm.weekOffset == 0)
-                        }
-                        .padding(.horizontal)
+                        weekNavigation
+                            .padding(.horizontal)
 
-                        // Donut chart
                         TimeCategoryDonutView(stats: week)
                             .padding(.horizontal)
 
-                        // Daily bar chart
                         DailyBarChartView(stats: week)
                             .padding(.horizontal)
 
-                        // vs 4-week average
                         if let avg = vm.averageWeek {
                             CategoryComparisonView(current: week, average: avg)
                                 .padding(.horizontal)
@@ -52,6 +35,28 @@ struct ReviewRootView: View {
         .task { await vm.load(prefs: prefs) }
         .onChange(of: vm.weekOffset) { _ in Task { await vm.load(prefs: prefs) } }
     }
+
+    private var weekNavigation: some View {
+        HStack {
+            Button {
+                Task { await vm.goBack(); await vm.load(prefs: prefs) }
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            Spacer()
+            if let week = vm.currentWeek {
+                Text(week.weekLabel).font(.system(size: 15, weight: .medium))
+            }
+            Spacer()
+            Button {
+                Task { await vm.goForward(); await vm.load(prefs: prefs) }
+            } label: {
+                Image(systemName: "chevron.right")
+                    .foregroundColor(vm.weekOffset == 0 ? .secondary : .primary)
+            }
+            .disabled(vm.weekOffset == 0)
+        }
+    }
 }
 
 // MARK: - Donut chart
@@ -59,37 +64,82 @@ struct ReviewRootView: View {
 struct TimeCategoryDonutView: View {
     let stats: WeekStats
 
+    private struct ChartItem: Identifiable {
+        let id = UUID()
+        let name: String
+        let minutes: Int
+        let colorHex: String
+    }
+
+    private var trackedItems: [ChartItem] {
+        TimeCategory.allCases.compactMap { cat in
+            let m = stats.byCategory[cat] ?? 0
+            guard m > 0 else { return nil }
+            return ChartItem(name: cat.displayName, minutes: m, colorHex: cat.hex)
+        }
+    }
+
+    private var allItems: [ChartItem] {
+        var result = trackedItems
+        if stats.untracked > 0 {
+            result.append(ChartItem(name: "未追踪", minutes: stats.untracked, colorHex: "#9CA3AF"))
+        }
+        return result
+    }
+
+    private var trackedTotal: Int { trackedItems.reduce(0) { $0 + $1.minutes } }
+    private var allTotal: Int { allItems.reduce(0) { $0 + $1.minutes } }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("时间分布").font(.headline)
 
-            if #available(iOS 17, *) {
-                Chart(chartData, id: \.category) { item in
-                    SectorMark(angle: .value("时间", item.minutes), innerRadius: .ratio(0.5))
-                        .foregroundStyle(Color(hex: item.color))
+            if allItems.isEmpty {
+                Text("本周暂无记录").foregroundColor(.secondary).font(.system(size: 13))
+                    .padding(.vertical, 4)
+            } else if #available(iOS 17, *) {
+                ZStack {
+                    Chart(allItems) { item in
+                        SectorMark(
+                            angle: .value("时间", item.minutes),
+                            innerRadius: .ratio(0.55)
+                        )
+                        .foregroundStyle(Color(hex: item.colorHex))
+                    }
+                    .frame(height: 200)
+
+                    VStack(spacing: 2) {
+                        Text("已记录").font(.system(size: 11)).foregroundColor(.secondary)
+                        Text(minuteLabel(trackedTotal)).font(.system(size: 15, weight: .semibold))
+                    }
                 }
-                .frame(height: 200)
             } else {
-                // Fallback: horizontal bar segments
+                // iOS 16 fallback: horizontal stacked bar
                 GeometryReader { geo in
                     HStack(spacing: 2) {
-                        ForEach(chartData, id: \.category) { item in
-                            let ratio = totalMinutes > 0 ? CGFloat(item.minutes) / CGFloat(totalMinutes) : 0
+                        ForEach(allItems) { item in
+                            let w = allTotal > 0 ? geo.size.width * CGFloat(item.minutes) / CGFloat(allTotal) : 0
                             Rectangle()
-                                .fill(Color(hex: item.color))
-                                .frame(width: geo.size.width * ratio)
+                                .fill(Color(hex: item.colorHex))
+                                .frame(width: max(w, 0))
                         }
                     }
-                    .cornerRadius(6)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .frame(height: 24)
+
+                HStack {
+                    Text("已记录 \(minuteLabel(trackedTotal))").font(.system(size: 12)).foregroundColor(.secondary)
+                    Spacer()
+                    Text("共 \(minuteLabel(allTotal))").font(.system(size: 12)).foregroundColor(.secondary)
+                }
             }
 
             // Legend
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                ForEach(chartData, id: \.category) { item in
+                ForEach(allItems) { item in
                     HStack(spacing: 6) {
-                        Circle().fill(Color(hex: item.color)).frame(width: 10, height: 10)
+                        Circle().fill(Color(hex: item.colorHex)).frame(width: 10, height: 10)
                         Text(item.name).font(.system(size: 12)).foregroundColor(.secondary)
                         Spacer()
                         Text(minuteLabel(item.minutes)).font(.system(size: 12, weight: .medium))
@@ -102,62 +152,71 @@ struct TimeCategoryDonutView: View {
         .cornerRadius(12)
     }
 
-    private var chartData: [(category: TimeCategory, name: String, minutes: Int, color: String)] {
-        TimeCategory.allCases.map { cat in
-            (cat, cat.displayName, stats.byCategory[cat] ?? 0, cat.hex)
-        }.filter { $0.minutes > 0 }
-    }
-
-    private var totalMinutes: Int { chartData.reduce(0) { $0 + $1.minutes } }
-
     private func minuteLabel(_ mins: Int) -> String {
         let h = mins / 60; let m = mins % 60
-        return h > 0 ? "\(h)h\(m > 0 ? "\(m)m" : "")" : "\(m)m"
+        return h > 0 ? "\(h)h\(m > 0 ? " \(m)m" : "")" : "\(m)m"
     }
 }
 
 // MARK: - Daily bar chart
 
+private struct BarEntry: Identifiable {
+    let id = UUID()
+    let dayLabel: String
+    let minutes: Int
+    let seriesName: String
+    let colorHex: String
+}
+
 struct DailyBarChartView: View {
     let stats: WeekStats
+
+    private var flatData: [BarEntry] {
+        var result: [BarEntry] = []
+        for day in stats.byDay {
+            let label = day.date.dayNumber
+            for cat in TimeCategory.allCases {
+                let m = day.byCategory[cat] ?? 0
+                guard m > 0 else { continue }
+                result.append(BarEntry(dayLabel: label, minutes: m,
+                                       seriesName: cat.displayName, colorHex: cat.hex))
+            }
+            if day.untracked > 0 {
+                result.append(BarEntry(dayLabel: label, minutes: day.untracked,
+                                       seriesName: "未追踪", colorHex: "#9CA3AF"))
+            }
+        }
+        return result
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("每日分布").font(.headline)
 
-            if #available(iOS 16, *) {
-                Chart {
-                    ForEach(stats.byDay, id: \.date) { day in
-                        ForEach(TimeCategory.allCases, id: \.self) { cat in
-                            let mins = day.byCategory[cat] ?? 0
-                            if mins > 0 {
-                                BarMark(
-                                    x: .value("日期", day.date.dayNumber),
-                                    y: .value("分钟", mins)
-                                )
-                                .foregroundStyle(Color(hex: cat.hex))
-                            }
+            Chart(flatData) { entry in
+                BarMark(
+                    x: .value("日期", entry.dayLabel),
+                    y: .value("分钟", entry.minutes),
+                    stacking: .standard
+                )
+                .foregroundStyle(Color(hex: entry.colorHex))
+            }
+            .frame(height: 160)
+
+            // Legend row
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(TimeCategory.allCases, id: \.self) { cat in
+                        HStack(spacing: 4) {
+                            Circle().fill(Color(hex: cat.hex)).frame(width: 8, height: 8)
+                            Text(cat.displayName).font(.system(size: 10)).foregroundColor(.secondary)
                         }
                     }
-                }
-                .chartLegend(.hidden)
-                .frame(height: 160)
-            } else {
-                // Fallback: simple bar for each day
-                HStack(alignment: .bottom, spacing: 4) {
-                    ForEach(stats.byDay, id: \.date) { day in
-                        let total = day.byCategory.values.reduce(0, +)
-                        VStack(spacing: 2) {
-                            Rectangle()
-                                .fill(Color.blue)
-                                .frame(height: total > 0 ? CGFloat(total) / 10 : 2)
-                            Text(day.date.dayNumber)
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                        }
+                    HStack(spacing: 4) {
+                        Circle().fill(Color(hex: "#9CA3AF")).frame(width: 8, height: 8)
+                        Text("未追踪").font(.system(size: 10)).foregroundColor(.secondary)
                     }
                 }
-                .frame(height: 100)
             }
         }
         .padding()
@@ -177,33 +236,43 @@ struct CategoryComparisonView: View {
             Text("vs 4周均值").font(.headline)
 
             ForEach(TimeCategory.allCases, id: \.self) { cat in
-                let curr = current.byCategory[cat] ?? 0
-                let avg  = average.byCategory[cat] ?? 0
+                let curr   = current.byCategory[cat] ?? 0
+                let avg    = average.byCategory[cat] ?? 0
                 let maxVal = max(curr, avg, 60)
 
-                HStack(spacing: 8) {
-                    Text(cat.displayName)
-                        .font(.system(size: 12))
-                        .frame(width: 60, alignment: .leading)
+                VStack(spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(cat.displayName)
+                            .font(.system(size: 13, weight: .medium))
+                            .frame(width: 60, alignment: .leading)
 
-                    GeometryReader { geo in
-                        VStack(alignment: .leading, spacing: 3) {
-                            // Current week bar
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color(hex: cat.hex))
-                                .frame(width: geo.size.width * CGFloat(curr) / CGFloat(maxVal), height: 8)
-                            // Average bar (dashed appearance)
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color(hex: cat.hex).opacity(0.35))
-                                .frame(width: geo.size.width * CGFloat(avg) / CGFloat(maxVal), height: 8)
+                        GeometryReader { geo in
+                            VStack(alignment: .leading, spacing: 3) {
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(Color(hex: cat.hex))
+                                    .frame(width: geo.size.width * CGFloat(curr) / CGFloat(maxVal), height: 8)
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(Color(hex: cat.hex).opacity(0.35))
+                                    .frame(width: geo.size.width * CGFloat(avg) / CGFloat(maxVal), height: 8)
+                            }
                         }
-                    }
-                    .frame(height: 24)
+                        .frame(height: 24)
 
-                    Text(diffLabel(curr: curr, avg: avg))
-                        .font(.system(size: 11))
-                        .foregroundColor(curr >= avg ? .green : .red)
-                        .frame(width: 44, alignment: .trailing)
+                        Text(diffLabel(curr: curr, avg: avg))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(curr >= avg ? .green : .red)
+                            .frame(width: 50, alignment: .trailing)
+                    }
+
+                    HStack {
+                        Text("").frame(width: 60)
+                        Text("本周 \(minuteLabel(curr))")
+                            .font(.system(size: 10)).foregroundColor(.secondary)
+                        Text("·").foregroundColor(.secondary)
+                        Text("均值 \(minuteLabel(avg))")
+                            .font(.system(size: 10)).foregroundColor(.secondary)
+                        Spacer()
+                    }
                 }
             }
         }
@@ -214,9 +283,12 @@ struct CategoryComparisonView: View {
 
     private func diffLabel(curr: Int, avg: Int) -> String {
         let diff = curr - avg
-        let h = abs(diff) / 60
-        let m = abs(diff) % 60
-        let label = h > 0 ? "\(h)h\(m > 0 ? "\(m)m" : "")" : "\(m)m"
-        return diff >= 0 ? "+\(label)" : "-\(label)"
+        if abs(diff) < 5 { return "持平" }
+        return (diff >= 0 ? "↑ +" : "↓ ") + minuteLabel(abs(diff))
+    }
+
+    private func minuteLabel(_ mins: Int) -> String {
+        let h = mins / 60; let m = mins % 60
+        return h > 0 ? "\(h)h\(m > 0 ? "\(m)m" : "")" : "\(m)m"
     }
 }

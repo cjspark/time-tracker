@@ -79,6 +79,16 @@ class TreeViewModel: ObservableObject {
         updateAchievementInBranch(id: id) { $0.archivedAt = ISO8601DateFormatter().string(from: Date()) }
     }
 
+    func unarchiveAchievement(id: UUID) async {
+        try? await AchievementService.unarchive(id: id)
+        updateAchievementInBranch(id: id) { $0.archivedAt = nil }
+    }
+
+    func updateAchievementTarget(id: UUID, value: Double) async {
+        try? await AchievementService.updateTarget(id: id, targetValue: value)
+        updateAchievementInBranch(id: id) { $0.targetValue = value }
+    }
+
     func addRecord(_ insert: AchievementRecordInsert, to achievementId: UUID) async {
         guard let rec = try? await AchievementService.addRecord(insert) else { return }
         updateAchievementInBranch(id: achievementId) { $0.records.append(rec) }

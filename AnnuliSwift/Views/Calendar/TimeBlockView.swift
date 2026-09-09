@@ -6,29 +6,45 @@ struct TimeBlockView: View {
 
     private var opacity: Double { Constants.moodOpacity(entry.mood) }
     private var blockColor: Color { Color(hex: entry.color) }
-    private var textColor: Color { opacity > 0.5 ? .white : Color(hex: entry.color) }
 
     private var top: CGFloat    { CGFloat(entry.startMinutes) * Constants.pxPerMinute }
     private var height: CGFloat { max(CGFloat(entry.durationMinutes) * Constants.pxPerMinute, 18) }
 
+    // Show notes if present, otherwise hobby name
+    private var displayText: String {
+        let notes = entry.notes ?? ""
+        return notes.isEmpty ? entry.hobby : notes
+    }
+
     var body: some View {
         ZStack(alignment: .topLeading) {
+            // Background fill (lighter)
             RoundedRectangle(cornerRadius: 4)
-                .fill(blockColor.opacity(opacity))
+                .fill(blockColor.opacity(opacity * 0.45))
 
-            if height >= 24 {
+            // Left border stripe
+            HStack(spacing: 0) {
+                Rectangle()
+                    .fill(blockColor)
+                    .frame(width: 3)
+                Spacer()
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+
+            if height >= 22 {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(entry.hobby)
+                    Text(displayText)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(textColor)
+                        .foregroundColor(blockColor.opacity(opacity > 0.4 ? 1.0 : 0.8))
                         .lineLimit(1)
                     if height >= 40 {
                         Text(timeRange)
                             .font(.system(size: 10))
-                            .foregroundColor(textColor.opacity(0.85))
+                            .foregroundColor(blockColor.opacity(0.75))
                     }
                 }
-                .padding(.horizontal, 4)
+                .padding(.leading, 7)
+                .padding(.trailing, 3)
                 .padding(.vertical, 2)
             }
         }

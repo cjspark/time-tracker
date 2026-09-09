@@ -32,14 +32,15 @@ enum Constants {
         "瞎忙": [],
     ]
 
-    // Mood opacity
+    // Mood opacity: 1=very bad (dim), 5=very good (vivid)
     static func moodOpacity(_ mood: Int?) -> Double {
         switch mood {
-        case 1: return 0.95
-        case 2: return 0.75
-        case 3: return 0.55
-        case 4: return 0.35
-        default: return 0.18
+        case 1: return 0.22
+        case 2: return 0.42
+        case 3: return 0.62
+        case 4: return 0.80
+        case 5: return 0.95
+        default: return 0.62
         }
     }
 }

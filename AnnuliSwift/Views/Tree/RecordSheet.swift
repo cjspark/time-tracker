@@ -10,39 +10,87 @@ struct RecordSheet: View {
     @State private var date = Date()
     @State private var showDeleteConfirm = false
 
+    // Edit target
+    @State private var isEditingTarget = false
+    @State private var targetDraft = ""
+
     var isHabit: Bool { achievement.template == .habit }
 
     var body: some View {
         NavigationView {
             List {
-                // Header: name + progress
+                // Header: name + progress + edit target
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(achievement.name)
-                            .font(.headline)
-                        Text("\(Int(achievement.currentValue)) / \(Int(achievement.targetValue)) \(achievement.unit)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                        HStack(alignment: .top) {
+                            Text(achievement.name).font(.headline)
+                            Spacer()
+                            if achievement.isArchived {
+                                Label("里程碑", systemImage: "trophy.circle")
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+                            }
+                        }
+
+                        if isEditingTarget {
+                            HStack {
+                                Text("目标值").font(.subheadline).foregroundColor(.secondary)
+                                TextField("目标", text: $targetDraft)
+                                    .keyboardType(.decimalPad)
+                                    .textFieldStyle(.roundedBorder)
+                                    .frame(width: 80)
+                                Text(achievement.unit).font(.subheadline).foregroundColor(.secondary)
+                                Spacer()
+                                Button("确定") {
+                                    if let v = Double(targetDraft), v > 0 {
+                                        Task { await vm.updateAchievementTarget(id: achievement.id, value: v) }
+                                    }
+                                    isEditingTarget = false
+                                }
+                                .font(.system(size: 13, weight: .medium))
+                                Button("取消") { isEditingTarget = false }
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                            }
+                        } else {
+                            HStack {
+                                Text("\(Int(achievement.currentValue)) / \(Int(achievement.targetValue)) \(achievement.unit)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                Button {
+                                    targetDraft = String(Int(achievement.targetValue))
+                                    isEditingTarget = true
+                                } label: {
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.blue)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+
                         ProgressView(value: achievement.progress)
-                            .tint(.red)
+                            .tint(achievement.isArchived ? .orange : .red)
                     }
                     .padding(.vertical, 4)
                 }
 
-                // Add record
-                Section("添加记录") {
-                    if !isHabit {
-                        TextField("数值", text: $valueText)
-                            .keyboardType(.decimalPad)
-                    }
-                    DatePicker("日期", selection: $date, displayedComponents: .date)
-                        .environment(\.locale, Locale(identifier: "zh_CN"))
-                    TextField("备注（可选）", text: $note)
+                // Add record (hidden if archived)
+                if !achievement.isArchived {
+                    Section("添加记录") {
+                        if !isHabit {
+                            TextField("数值", text: $valueText)
+                                .keyboardType(.decimalPad)
+                        }
+                        DatePicker("日期", selection: $date, displayedComponents: .date)
+                            .environment(\.locale, Locale(identifier: "zh_CN"))
+                        TextField("备注（可选）", text: $note)
 
-                    Button(isHabit ? "打卡 +1" : "添加") {
-                        addRecord()
+                        Button(isHabit ? "打卡 +1" : "添加") {
+                            addRecord()
+                        }
+                        .disabled(!isHabit && valueText.isEmpty)
                     }
-                    .disabled(!isHabit && valueText.isEmpty)
                 }
 
                 // Record history
@@ -70,9 +118,14 @@ struct RecordSheet: View {
                     }
                 }
 
-                // Danger zone
+                // Actions
                 Section {
-                    if achievement.progress >= 1 && !achievement.isArchived {
+                    if achievement.isArchived {
+                        Button("取消归档") {
+                            Task { await vm.unarchiveAchievement(id: achievement.id); dismiss() }
+                        }
+                        .foregroundColor(.blue)
+                    } else if achievement.progress >= 1 {
                         Button("归档为里程碑") {
                             Task { await vm.archiveAchievement(id: achievement.id); dismiss() }
                         }

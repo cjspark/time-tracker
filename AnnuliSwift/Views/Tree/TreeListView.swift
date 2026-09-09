@@ -20,10 +20,6 @@ struct BranchCardView: View {
     @ObservedObject var vm: TreeViewModel
     @State private var isExpanded = true
 
-    private var isInvestment: Bool {
-        branch.category.contains("投资") || branch.category.contains("理财")
-    }
-
     var body: some View {
         Section {
             // Category header
@@ -56,7 +52,7 @@ struct BranchCardView: View {
                     }
                 }
 
-                // Archived achievements as milestones
+                // Archived achievements (milestones) — each shown as tappable row
                 let archived = branch.achievements.filter(\.isArchived)
                 if !archived.isEmpty {
                     HStack {
@@ -66,6 +62,16 @@ struct BranchCardView: View {
                         Text("里程碑 (\(archived.count))")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 2)
+
+                    ForEach(archived) { ach in
+                        ArchivedAchievementRow(achievement: ach) {
+                            vm.selectedAchievement = ach
+                            vm.showRecordSheet = true
+                        } onUnarchive: {
+                            Task { await vm.unarchiveAchievement(id: ach.id) }
+                        }
                     }
                 }
 
@@ -126,7 +132,7 @@ struct HobbyBarRow: View {
     }
 }
 
-// MARK: - Achievement row
+// MARK: - Achievement row (active)
 
 struct AchievementRow: View {
     let achievement: Achievement
@@ -153,5 +159,50 @@ struct AchievementRow: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Archived achievement row (milestone)
+
+struct ArchivedAchievementRow: View {
+    let achievement: Achievement
+    let onTap: () -> Void
+    let onUnarchive: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "trophy.circle")
+                .font(.system(size: 14))
+                .foregroundColor(.orange)
+            Button(action: onTap) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(achievement.name)
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                        .strikethrough(false)
+                    if let archivedAt = achievement.archivedAt,
+                       let date = archivedAt.toDate() {
+                        Text("归档于 \(date.monthDay)")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            Spacer()
+            Button {
+                onUnarchive()
+            } label: {
+                Text("取消归档")
+                    .font(.system(size: 11))
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(6)
+            }
+            .buttonStyle(.plain)
+        }
+        .opacity(0.75)
     }
 }

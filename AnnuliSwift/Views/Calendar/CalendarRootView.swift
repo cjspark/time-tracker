@@ -6,9 +6,24 @@ struct CalendarRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top bar: view switcher + date navigator
-            HStack(spacing: 12) {
+            // Top bar: view switcher + today button + date navigator
+            HStack(spacing: 8) {
                 ViewSwitcherView(selected: $vm.viewMode)
+
+                // Today button
+                let isToday = Calendar.current.isDateInToday(vm.anchorDate)
+                Button("今") {
+                    vm.anchorDate = Date()
+                    Task { await vm.load() }
+                }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(isToday ? .white : .blue)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(isToday ? Color.blue : Color.clear)
+                .cornerRadius(6)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.blue, lineWidth: isToday ? 0 : 1))
+
                 Spacer()
                 DateNavigatorView(
                     label: navigationLabel,

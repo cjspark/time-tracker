@@ -85,6 +85,32 @@ class PrefsViewModel: ObservableObject {
         await svc.set(.hobbyTimeCategory, value: timeCategoryMap)
     }
 
+    func setInactive(hobby: String) async {
+        if !inactiveHobbies.contains(hobby) {
+            inactiveHobbies.append(hobby)
+            await svc.set(.hobbyInactive, value: inactiveHobbies)
+        }
+    }
+
+    func setActive(hobby: String) async {
+        inactiveHobbies.removeAll { $0 == hobby }
+        await svc.set(.hobbyInactive, value: inactiveHobbies)
+    }
+
+    func renameCategory(_ cat: String, to newName: String) async {
+        if newName.trimmingCharacters(in: .whitespaces).isEmpty || newName == cat {
+            catRenames.removeValue(forKey: cat)
+        } else {
+            catRenames[cat] = newName
+        }
+        await svc.set(.hobbyCatRenames, value: catRenames)
+    }
+
+    func reorderCategories(_ order: [String]) async {
+        catOrder = order
+        await svc.set(.hobbyCatOrder, value: catOrder)
+    }
+
     func addCustomHobby(label: String, color: String) async {
         customHobbies.append(.init(label: label, color: color))
         await svc.set(.hobbyCustomHobbies, value: customHobbies)

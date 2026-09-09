@@ -3,10 +3,15 @@ import SwiftUI
 struct HobbyEditSheet: View {
     let stat: HobbyStats
     let categories: [String]
+    let currentTimeCategory: String?
+    let isInactive: Bool
     let onSaveCategory: (String) -> Void
     let onSaveHistorical: (Int) -> Void
     let onSaveColor: (String) -> Void
     let onSaveLabel: (String) -> Void
+    let onSaveTimeCategory: (String?) -> Void
+    let onSetInactive: () -> Void
+    let onSetActive: () -> Void
     let onHide: () -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -14,21 +19,28 @@ struct HobbyEditSheet: View {
     @State private var historicalText: String
     @State private var labelText: String
     @State private var colorHex: String
-    @State private var showColorPicker = false
+    @State private var selectedTimeCategory: String
 
-    init(stat: HobbyStats, categories: [String],
+    init(stat: HobbyStats, categories: [String], currentTimeCategory: String?, isInactive: Bool,
          onSaveCategory: @escaping (String) -> Void,
          onSaveHistorical: @escaping (Int) -> Void,
          onSaveColor: @escaping (String) -> Void,
          onSaveLabel: @escaping (String) -> Void,
+         onSaveTimeCategory: @escaping (String?) -> Void,
+         onSetInactive: @escaping () -> Void,
+         onSetActive: @escaping () -> Void,
          onHide: @escaping () -> Void) {
         self.stat = stat; self.categories = categories
+        self.currentTimeCategory = currentTimeCategory; self.isInactive = isInactive
         self.onSaveCategory = onSaveCategory; self.onSaveHistorical = onSaveHistorical
-        self.onSaveColor = onSaveColor; self.onSaveLabel = onSaveLabel; self.onHide = onHide
-        _selectedCategory = State(initialValue: stat.category ?? "")
-        _historicalText   = State(initialValue: "\(stat.historicalMinutes)")
-        _labelText        = State(initialValue: stat.displayLabel)
-        _colorHex         = State(initialValue: stat.color)
+        self.onSaveColor = onSaveColor; self.onSaveLabel = onSaveLabel
+        self.onSaveTimeCategory = onSaveTimeCategory
+        self.onSetInactive = onSetInactive; self.onSetActive = onSetActive; self.onHide = onHide
+        _selectedCategory     = State(initialValue: stat.category ?? "")
+        _historicalText       = State(initialValue: "\(stat.historicalMinutes)")
+        _labelText            = State(initialValue: stat.displayLabel)
+        _colorHex             = State(initialValue: stat.color)
+        _selectedTimeCategory = State(initialValue: currentTimeCategory ?? "")
     }
 
     var body: some View {
@@ -41,14 +53,12 @@ struct HobbyEditSheet: View {
                 Section("颜色") {
                     ColorPicker("选择颜色", selection: Binding(
                         get: { Color(hex: colorHex) },
-                        set: { color in
-                            if let hex = color.toHex() { colorHex = hex }
-                        }
+                        set: { color in if let hex = color.toHex() { colorHex = hex } }
                     ))
                 }
 
-                Section("分类") {
-                    Picker("分类", selection: $selectedCategory) {
+                Section("大类") {
+                    Picker("大类", selection: $selectedCategory) {
                         Text("未分类").tag("")
                         ForEach(categories, id: \.self) { cat in
                             Text(cat).tag(cat)
@@ -56,16 +66,51 @@ struct HobbyEditSheet: View {
                     }
                 }
 
+                // 时间类型 — 决定复盘图表归属
+                Section {
+                    Picker("时间类型", selection: $selectedTimeCategory) {
+                        Text("未设置").tag("")
+                        ForEach(TimeCategory.allCases, id: \.self) { cat in
+                            HStack {
+                                Circle().fill(Color(hex: cat.hex)).frame(width: 10, height: 10)
+                                Text(cat.displayName)
+                            }
+                            .tag(cat.rawValue)
+                        }
+                    }
+                } header: {
+                    Text("时间类型")
+                } footer: {
+                    Text("决定此活动在复盘图表中的颜色分类")
+                        .font(.caption)
+                }
+
                 Section("历史时间（分钟）") {
-                    TextField("分钟数", text: $historicalText)
+                    TextField("分钟数（绝对值）", text: $historicalText)
                         .keyboardType(.numberPad)
                 }
 
                 Section {
-                    Button("隐藏此活动", role: .destructive) {
+                    if isInactive {
+                        Button("激活此活动") {
+                            onSetActive()
+                            dismiss()
+                        }
+                        .foregroundColor(.green)
+                    } else {
+                        Button("封存此活动") {
+                            onSetInactive()
+                            dismiss()
+                        }
+                        .foregroundColor(.orange)
+                    }
+                    Button("完全隐藏（不可见）", role: .destructive) {
                         onHide()
                         dismiss()
                     }
+                } footer: {
+                    Text("封存：保留但置灰显示。完全隐藏：从所有列表中移除。")
+                        .font(.caption)
                 }
             }
             .navigationTitle("编辑「\(stat.label)」")
@@ -79,6 +124,7 @@ struct HobbyEditSheet: View {
                         onSaveLabel(labelText)
                         onSaveColor(colorHex)
                         onSaveCategory(selectedCategory)
+                        onSaveTimeCategory(selectedTimeCategory.isEmpty ? nil : selectedTimeCategory)
                         if let mins = Int(historicalText) { onSaveHistorical(mins) }
                         dismiss()
                     }
@@ -137,6 +183,46 @@ struct AddCategorySheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+// MARK: - Category reorder sheet
+
+struct CategoryOrderSheet: View {
+    let categories: [String]
+    let displayName: (String) -> String
+    let onSave: ([String]) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var ordered: [String]
+
+    init(categories: [String], displayName: @escaping (String) -> String, onSave: @escaping ([String]) -> Void) {
+        self.categories = categories; self.displayName = displayName; self.onSave = onSave
+        _ordered = State(initialValue: categories)
+    }
+
+    var body: some View {
+        NavigationView {
+            List {
+                ForEach(ordered, id: \.self) { cat in
+                    HStack {
+                        Image(systemName: "line.3.horizontal")
+                            .foregroundColor(.secondary)
+                        Text(displayName(cat))
+                    }
+                }
+                .onMove { from, to in ordered.move(fromOffsets: from, toOffset: to) }
+            }
+            .environment(\.editMode, .constant(.active))
+            .navigationTitle("排序分类")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("保存") { onSave(ordered); dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.large])
     }
 }
 

@@ -1,51 +1,173 @@
 import SwiftUI
 
 struct HobbiesRootView: View {
-    @StateObject private var vm = HobbiesViewModel()
+    @StateObject private var vm       = HobbiesViewModel()
+    @StateObject private var treeVM   = TreeViewModel()
     @EnvironmentObject private var prefs: PrefsViewModel
     @EnvironmentObject private var timer: TimerViewModel
 
-    @State private var showAddHobby = false
-    @State private var showAddCategory = false
+    // Sheet state
     @State private var editingHobby: HobbyStats?
+    @State private var showAddHobby    = false
+    @State private var showAddCategory = false
+    @State private var showCatOrder    = false
+    @State private var showAddHabit    = false
+
+    // Habit section
+    @State private var showHabits       = true
+    @State private var habitWeekOffset  = 0
+
+    // Category rename alert
+    @State private var renamingCat: String?
+    @State private var renameDraft = ""
+
+    // Computed
+    private var habitWeekDates: [Date] {
+        let anchor = Calendar.current.date(byAdding: .weekOfYear, value: habitWeekOffset, to: Date()) ?? Date()
+        return WeekCalculator.weekDates(containing: anchor)
+    }
+
+    private var habits: [Achievement] {
+        treeVM.branches.flatMap(\.achievements).filter { $0.template == .habit && !$0.isArchived }
+    }
 
     var body: some View {
         NavigationView {
             List {
-                ForEach(prefs.orderedCategories, id: \.self) { cat in
-                    let catStats = vm.stats.filter { $0.category == cat }
-                    Section(prefs.displayName(for: cat)) {
-                        ForEach(catStats) { hobby in
-                            HobbyRowView(
-                                stat: hobby,
-                                isTimerActive: timer.activeHobby == hobby.label,
-                                onStartTimer: {
-                                    if timer.activeHobby == hobby.label {
-                                        Task { await timer.stop(save: true) }
-                                    } else {
-                                        timer.start(hobby: hobby.label, color: hobby.color)
-                                    }
-                                },
-                                onEdit: { editingHobby = hobby }
-                            )
+                // ── 习惯打卡 ──────────────────────────────────────────
+                Section {
+                    if showHabits {
+                        // Day header row
+                        HStack(spacing: 0) {
+                            Text("").frame(width: 86)
+                            ForEach(habitWeekDates, id: \.self) { day in
+                                VStack(spacing: 2) {
+                                    Text(day.weekdayShort)
+                                        .font(.system(size: 10))
+                                        .foregroundColor(.secondary)
+                                    Text(day.dayNumber)
+                                        .font(.system(size: 11, weight: day.isToday ? .bold : .regular))
+                                        .foregroundColor(day.isToday ? .blue : .primary)
+                                }
+                                .frame(maxWidth: .infinity)
+                            }
+                        }
+                        .listRowBackground(Color(.secondarySystemBackground))
+
+                        if habits.isEmpty {
+                            HStack {
+                                Spacer()
+                                Text("还没有习惯").foregroundColor(.secondary).font(.system(size: 13))
+                                Spacer()
+                            }
+                        } else {
+                            ForEach(habits) { habit in
+                                HabitGridRow(habit: habit, weekDates: habitWeekDates, vm: treeVM)
+                            }
+                        }
+
+                        Button {
+                            showAddHabit = true
+                        } label: {
+                            Label("添加习惯", systemImage: "plus.circle")
+                                .font(.system(size: 13))
+                                .foregroundColor(.blue)
+                        }
+                    }
+                } header: {
+                    HStack(spacing: 6) {
+                        Button {
+                            withAnimation { showHabits.toggle() }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("习惯打卡")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Image(systemName: showHabits ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 10))
+                            }
+                            .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                        if showHabits {
+                            HStack(spacing: 8) {
+                                Button { habitWeekOffset -= 1 } label: {
+                                    Image(systemName: "chevron.left").font(.system(size: 11))
+                                }
+                                .buttonStyle(.plain)
+                                Text(WeekCalculator.weekLabel(dates: habitWeekDates))
+                                    .font(.system(size: 11))
+                                Button {
+                                    if habitWeekOffset < 0 { habitWeekOffset += 1 }
+                                } label: {
+                                    Image(systemName: "chevron.right").font(.system(size: 11))
+                                        .foregroundColor(habitWeekOffset >= 0 ? .secondary : .primary)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(habitWeekOffset >= 0)
+                            }
                         }
                     }
                 }
 
-                // Uncategorized
+                // ── 各分类 ─────────────────────────────────────────────
+                ForEach(prefs.orderedCategories, id: \.self) { cat in
+                    let activeStats   = vm.stats.filter { $0.category == cat && !prefs.inactiveHobbies.contains($0.label) }
+                    let inactiveStats = vm.stats.filter { $0.category == cat &&  prefs.inactiveHobbies.contains($0.label) }
+                    let catTotalMins  = (activeStats + inactiveStats).reduce(0) { $0 + $1.totalMinutes }
+
+                    Section {
+                        ForEach(activeStats) { hobby in
+                            HobbyRowView(
+                                stat: hobby, isInactive: false,
+                                isTimerActive: timer.activeHobby == hobby.label,
+                                onStartTimer: {
+                                    if timer.activeHobby == hobby.label {
+                                        Task { await timer.stop(save: true) }
+                                    } else { timer.start(hobby: hobby.label, color: hobby.color) }
+                                },
+                                onEdit: { editingHobby = hobby }
+                            )
+                        }
+                        ForEach(inactiveStats) { hobby in
+                            HobbyRowView(
+                                stat: hobby, isInactive: true,
+                                isTimerActive: false,
+                                onStartTimer: {},
+                                onEdit: { editingHobby = hobby }
+                            )
+                        }
+                    } header: {
+                        HStack {
+                            Button(prefs.displayName(for: cat)) {
+                                renameDraft = prefs.displayName(for: cat)
+                                renamingCat = cat
+                            }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            Spacer()
+                            if catTotalMins > 0 {
+                                Text(minuteLabel(catTotalMins))
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                // ── 未分类 ────────────────────────────────────────────
                 let uncategorized = vm.stats.filter { $0.category == nil }
                 if !uncategorized.isEmpty {
                     Section("未分类") {
                         ForEach(uncategorized) { hobby in
                             HobbyRowView(
-                                stat: hobby,
+                                stat: hobby, isInactive: prefs.inactiveHobbies.contains(hobby.label),
                                 isTimerActive: timer.activeHobby == hobby.label,
                                 onStartTimer: {
                                     if timer.activeHobby == hobby.label {
                                         Task { await timer.stop(save: true) }
-                                    } else {
-                                        timer.start(hobby: hobby.label, color: hobby.color)
-                                    }
+                                    } else { timer.start(hobby: hobby.label, color: hobby.color) }
                                 },
                                 onEdit: { editingHobby = hobby }
                             )
@@ -59,21 +181,48 @@ struct HobbiesRootView: View {
                     Menu {
                         Button("添加活动") { showAddHobby = true }
                         Button("添加分类") { showAddCategory = true }
+                        Divider()
+                        Button("排序分类") { showCatOrder = true }
                     } label: {
-                        Image(systemName: "plus")
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
-            .task { await vm.load(prefs: prefs) }
+            .task {
+                await vm.load(prefs: prefs)
+                await treeVM.load(prefs: prefs)
+            }
+            // Category rename alert
+            .alert("重命名分类", isPresented: Binding(
+                get: { renamingCat != nil },
+                set: { if !$0 { renamingCat = nil } }
+            )) {
+                TextField("分类名称", text: $renameDraft)
+                Button("确定") {
+                    if let cat = renamingCat {
+                        Task { await prefs.renameCategory(cat, to: renameDraft) }
+                    }
+                    renamingCat = nil
+                }
+                Button("取消", role: .cancel) { renamingCat = nil }
+            }
+            // Edit sheet
             .sheet(item: $editingHobby) { hobby in
                 HobbyEditSheet(
                     stat: hobby,
                     categories: prefs.orderedCategories,
-                    onSaveCategory: { cat in Task { await vm.updateCategory(hobby: hobby.label, category: cat) } },
-                    onSaveHistorical: { mins in Task { await vm.updateHistorical(hobby: hobby.label, minutes: mins) } },
-                    onSaveColor: { color in Task { await prefs.setColorOverride(color, for: hobby.label) } },
-                    onSaveLabel: { label in Task { await prefs.setLabelRename(label, for: hobby.label) } },
-                    onHide: { Task { await prefs.hide(hobby: hobby.label) } }
+                    currentTimeCategory: prefs.timeCategoryMap[hobby.label],
+                    isInactive: prefs.inactiveHobbies.contains(hobby.label),
+                    onSaveCategory:     { cat  in Task { await vm.updateCategory(hobby: hobby.label, category: cat) } },
+                    onSaveHistorical:   { mins in Task { await vm.updateHistorical(hobby: hobby.label, minutes: mins) } },
+                    onSaveColor:        { c    in Task { await prefs.setColorOverride(c, for: hobby.label) } },
+                    onSaveLabel:        { l    in Task { await prefs.setLabelRename(l, for: hobby.label) } },
+                    onSaveTimeCategory: { tc   in
+                        if let tc = tc { Task { await prefs.setTimeCategory(tc, for: hobby.label) } }
+                    },
+                    onSetInactive: { Task { await prefs.setInactive(hobby: hobby.label) } },
+                    onSetActive:   { Task { await prefs.setActive(hobby: hobby.label) } },
+                    onHide:        { Task { await prefs.hide(hobby: hobby.label) } }
                 )
             }
             .sheet(isPresented: $showAddHobby) {
@@ -86,6 +235,24 @@ struct HobbiesRootView: View {
                     Task { await prefs.addCustomCategory(name) }
                 }
             }
+            .sheet(isPresented: $showCatOrder) {
+                CategoryOrderSheet(
+                    categories: prefs.orderedCategories,
+                    displayName: { prefs.displayName(for: $0) },
+                    onSave: { order in Task { await prefs.reorderCategories(order) } }
+                )
+            }
+            .sheet(isPresented: $showAddHabit) {
+                AddHabitSheet { insert in
+                    Task { await treeVM.addAchievement(insert: insert) }
+                }
+                .environmentObject(prefs)
+            }
         }
+    }
+
+    private func minuteLabel(_ mins: Int) -> String {
+        let h = mins / 60; let m = mins % 60
+        return h > 0 ? "\(h)h\(m > 0 ? " \(m)m" : "")" : "\(m)m"
     }
 }
