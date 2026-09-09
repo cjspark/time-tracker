@@ -14,7 +14,12 @@ struct RecordSheet: View {
     @State private var isEditingTarget = false
     @State private var targetDraft = ""
 
+    // Add child investment
+    @State private var showAddChild = false
+
     var isHabit: Bool { achievement.template == .habit }
+    var isInvestment: Bool { [AchievementTemplate.dividend, .deposit, .stockProfit].contains(achievement.template) }
+    var isInvestmentParent: Bool { !achievement.children.isEmpty }
 
     var body: some View {
         NavigationView {
@@ -54,18 +59,20 @@ struct RecordSheet: View {
                             }
                         } else {
                             HStack {
-                                Text("\(Int(achievement.currentValue)) / \(Int(achievement.targetValue)) \(achievement.unit)")
+                                Text("\(formattedValue(achievement.currentValue)) / \(formattedValue(achievement.targetValue)) \(achievement.unit)")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
-                                Button {
-                                    targetDraft = String(Int(achievement.targetValue))
-                                    isEditingTarget = true
-                                } label: {
-                                    Image(systemName: "pencil")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.blue)
+                                if !isInvestmentParent {
+                                    Button {
+                                        targetDraft = String(Int(achievement.targetValue))
+                                        isEditingTarget = true
+                                    } label: {
+                                        Image(systemName: "pencil")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(.blue)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
 
@@ -75,8 +82,18 @@ struct RecordSheet: View {
                     .padding(.vertical, 4)
                 }
 
-                // Add record (hidden if archived)
-                if !achievement.isArchived {
+                // Investment metadata card
+                if let meta = achievement.metadata {
+                    investmentMetaSection(meta: meta)
+                }
+
+                // Investment parent: children list + add child
+                if isInvestmentParent || (achievement.children.isEmpty && isInvestmentCategory) {
+                    childrenSection
+                }
+
+                // Add record (for non-investment-parent non-archived achievements)
+                if !achievement.isArchived && !isInvestmentParent {
                     Section("添加记录") {
                         if !isHabit {
                             TextField("数值", text: $valueText)
@@ -94,25 +111,27 @@ struct RecordSheet: View {
                 }
 
                 // Record history
-                Section("记录历史") {
-                    if achievement.records.isEmpty {
-                        Text("暂无记录").foregroundColor(.secondary)
-                    }
-                    ForEach(achievement.records.sorted { $0.date > $1.date }) { record in
-                        HStack {
-                            Text(record.date)
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Text(isHabit ? "✓" : "+\(Int(record.value)) \(achievement.unit)")
-                                .font(.system(size: 13))
-                            if let n = record.note, !n.isEmpty {
-                                Text(n).font(.caption).foregroundColor(.secondary)
-                            }
+                if !isInvestmentParent {
+                    Section("记录历史") {
+                        if achievement.records.isEmpty {
+                            Text("暂无记录").foregroundColor(.secondary)
                         }
-                        .swipeActions {
-                            Button("删除", role: .destructive) {
-                                Task { await vm.deleteRecord(id: record.id, from: achievement.id) }
+                        ForEach(achievement.records.sorted { $0.date > $1.date }) { record in
+                            HStack {
+                                Text(record.date)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Text(isHabit ? "✓" : "+\(formattedValue(record.value)) \(achievement.unit)")
+                                    .font(.system(size: 13))
+                                if let n = record.note, !n.isEmpty {
+                                    Text(n).font(.caption).foregroundColor(.secondary)
+                                }
+                            }
+                            .swipeActions {
+                                Button("删除", role: .destructive) {
+                                    Task { await vm.deleteRecord(id: record.id, from: achievement.id) }
+                                }
                             }
                         }
                     }
@@ -144,9 +163,126 @@ struct RecordSheet: View {
                     Task { await vm.deleteAchievement(id: achievement.id); dismiss() }
                 }
             }
+            .sheet(isPresented: $showAddChild) {
+                AchievementSheet(
+                    category: achievement.category,
+                    year: achievement.year,
+                    parentId: achievement.id
+                ) { insert in
+                    Task { await vm.addAchievement(insert: insert) }
+                }
+            }
         }
         .presentationDetents([.large])
     }
+
+    // MARK: - Investment metadata display
+
+    @ViewBuilder
+    private func investmentMetaSection(meta: AchievementMetaWrapper) -> some View {
+        Section("投资详情") {
+            switch achievement.template {
+            case .dividend:
+                if let shares = meta.shares {
+                    metaRow("持股数量", value: "\(Int(shares)) 股")
+                }
+                if let d = meta.dividendPer10 {
+                    metaRow("每10股股息", value: "\(meta.currency == "USD" ? "$" : "¥")\(String(format: "%.2f", d))")
+                }
+                if let currency = meta.currency {
+                    metaRow("货币", value: currency)
+                }
+            case .deposit:
+                if let principal = meta.principal {
+                    metaRow("本金", value: "\(meta.currency == "USD" ? "$" : "¥")\(String(format: "%.2f", principal))")
+                }
+                if let rate = meta.rate {
+                    metaRow("年利率", value: "\(String(format: "%.2f", rate))%")
+                }
+            case .stockProfit:
+                if let cb = meta.costBasis, cb > 0 {
+                    metaRow("成本基数", value: "\(meta.currency == "USD" ? "$" : "¥")\(String(format: "%.2f", cb))")
+                }
+            default:
+                EmptyView()
+            }
+        }
+    }
+
+    private func metaRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label).foregroundColor(.secondary)
+            Spacer()
+            Text(value).font(.system(size: 13, weight: .medium))
+        }
+    }
+
+    // MARK: - Children section
+
+    private var isInvestmentCategory: Bool {
+        achievement.category.contains("投资") || achievement.category.contains("理财")
+    }
+
+    @ViewBuilder
+    private var childrenSection: some View {
+        Section {
+            if achievement.children.isEmpty {
+                Text("暂无子项").foregroundColor(.secondary)
+            }
+            ForEach(achievement.children) { child in
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Image(systemName: templateIcon(child.template))
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                            Text(child.name).font(.system(size: 13))
+                        }
+                        Text("\(child.unit) \(formattedValue(child.targetValue))")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Text(formattedValue(child.targetValue) + " " + child.unit)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.green)
+                }
+            }
+
+            Button {
+                showAddChild = true
+            } label: {
+                Label("添加投资子项", systemImage: "plus.circle")
+                    .font(.system(size: 14))
+                    .foregroundColor(.blue)
+            }
+        } header: {
+            HStack {
+                Text("投资子项")
+                Spacer()
+                if !achievement.children.isEmpty {
+                    Text("合计 \(achievement.children.reduce(0) { $0 + $1.targetValue }, format: .number.precision(.fractionLength(0...2))) \(achievement.unit)")
+                        .font(.system(size: 11))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
+    private func templateIcon(_ t: AchievementTemplate) -> String {
+        switch t {
+        case .dividend:    return "chart.bar"
+        case .deposit:     return "banknote"
+        case .stockProfit: return "arrow.up.right.circle"
+        default:           return "star.circle"
+        }
+    }
+
+    private func formattedValue(_ v: Double) -> String {
+        v == v.rounded() ? String(Int(v)) : String(format: "%.2f", v)
+    }
+
+    // MARK: - Add record
 
     private func addRecord() {
         guard let userId = AuthService.currentUserId else { return }
