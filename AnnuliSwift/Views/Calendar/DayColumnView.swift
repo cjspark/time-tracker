@@ -1,0 +1,102 @@
+import SwiftUI
+
+struct DayColumnView: View {
+    let dateStr: String
+    let entries: [TimeEntry]
+    let columnWidth: CGFloat
+    let onTap: (Int, Int) -> Void
+    let onEditEntry: (TimeEntry) -> Void
+
+    // Drag-to-create state
+    @State private var dragStart: Int?    // minutes
+    @State private var dragEnd: Int?
+    @State private var isDragging = false
+    @State private var longPressTriggered = false
+
+    private let snap = Constants.snapMinutes
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            // Tap / long-press + drag background
+            Color.clear
+                .contentShape(Rectangle())
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.4)
+                        .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .local))
+                        .onChanged { value in
+                            switch value {
+                            case .second(true, let drag?):
+                                let startMin = yToMinutes(drag.startLocation.y)
+                                let currentMin = yToMinutes(drag.location.y)
+                                if dragStart == nil {
+                                    dragStart = startMin.flooredToSnap()
+                                    isDragging = true
+                                }
+                                dragEnd = max(currentMin, (dragStart ?? 0) + snap).snapped()
+                            default:
+                                break
+                            }
+                        }
+                        .onEnded { value in
+                            if case .second(true, let drag?) = value {
+                                let start = dragStart ?? yToMinutes(drag.startLocation.y).flooredToSnap()
+                                let end   = max(yToMinutes(drag.location.y), start + snap).snapped()
+                                onTap(start, end)
+                            }
+                            dragStart = nil
+                            dragEnd = nil
+                            isDragging = false
+                        }
+                )
+
+            // Draft block preview during drag
+            if isDragging, let s = dragStart, let e = dragEnd, e > s {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.green.opacity(0.35))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.green, lineWidth: 1.5))
+                    .frame(width: columnWidth - 4, height: CGFloat(e - s) * Constants.pxPerMinute)
+                    .offset(x: 2, y: CGFloat(s) * Constants.pxPerMinute)
+            }
+
+            // Current time line (today only)
+            if dateStr == Date.todayString() {
+                CurrentTimeLineView(columnWidth: columnWidth)
+            }
+
+            // Existing time blocks
+            ForEach(entries) { entry in
+                TimeBlockView(entry: entry, columnWidth: columnWidth)
+                    .onTapGesture { onEditEntry(entry) }
+            }
+        }
+        .frame(width: columnWidth, height: Constants.totalGridHeight)
+        .clipped()
+    }
+
+    private func yToMinutes(_ y: CGFloat) -> Int {
+        Int(y / Constants.pxPerMinute)
+    }
+}
+
+// MARK: - Current time line
+
+struct CurrentTimeLineView: View {
+    let columnWidth: CGFloat
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 30)) { _ in
+            let mins = Calendar.current.component(.hour, from: Date()) * 60
+                + Calendar.current.component(.minute, from: Date())
+            ZStack(alignment: .leading) {
+                Rectangle()
+                    .fill(Color.red)
+                    .frame(width: columnWidth, height: 1.5)
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 8, height: 8)
+                    .offset(x: -4)
+            }
+            .offset(y: CGFloat(mins) * Constants.pxPerMinute)
+        }
+    }
+}
