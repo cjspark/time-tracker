@@ -92,4 +92,16 @@ class AuthViewModel: ObservableObject {
             return false
         }
     }
+
+    func deleteAccount() async {
+        do {
+            try await AuthService.deleteAccount()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    var currentEmail: String? {
+        AuthService.currentUser?.email
+    }
 }

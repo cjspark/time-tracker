@@ -29,6 +29,11 @@ struct AuthService {
         try await supabase.auth.update(user: UserAttributes(password: newPassword))
     }
 
+    static func deleteAccount() async throws {
+        try await supabase.rpc("delete_user").execute()
+        try await supabase.auth.signOut()
+    }
+
     static var currentUserId: UUID? {
         supabase.auth.currentUser?.id
     }

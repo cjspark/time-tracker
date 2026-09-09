@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @EnvironmentObject var prefs: PrefsViewModel
     @EnvironmentObject var timer: TimerViewModel
+    @EnvironmentObject var auth: AuthViewModel
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,6 +19,9 @@ struct MainTabView: View {
 
                 ReviewRootView()
                     .tabItem { Label("复盘", systemImage: "chart.bar") }
+
+                SettingsView()
+                    .tabItem { Label("设置", systemImage: "gearshape") }
             }
 
             // Timer bar floats above tab bar
