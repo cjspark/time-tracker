@@ -15,7 +15,18 @@ struct AuthService {
     }
 
     static func resetPassword(email: String) async throws {
-        try await supabase.auth.resetPasswordForEmail(email)
+        try await supabase.auth.resetPasswordForEmail(
+            email,
+            redirectTo: URL(string: "annuli://reset-password")!
+        )
+    }
+
+    static func handleSession(from url: URL) async throws {
+        try await supabase.auth.session(from: url)
+    }
+
+    static func updatePassword(_ newPassword: String) async throws {
+        try await supabase.auth.update(user: UserAttributes(password: newPassword))
     }
 
     static var currentUserId: UUID? {

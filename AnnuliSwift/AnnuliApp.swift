@@ -12,6 +12,9 @@ struct AnnuliApp: App {
                 if auth.isLoading {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if auth.isResettingPassword {
+                    ResetPasswordView()
+                        .environmentObject(auth)
                 } else if auth.isAuthenticated {
                     MainTabView()
                         .environmentObject(prefs)
@@ -23,6 +26,10 @@ struct AnnuliApp: App {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: auth.isAuthenticated)
+            .animation(.easeInOut(duration: 0.25), value: auth.isResettingPassword)
+            .onOpenURL { url in
+                Task { await auth.handleDeepLink(url: url) }
+            }
         }
     }
 }

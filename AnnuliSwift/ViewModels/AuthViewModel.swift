@@ -7,6 +7,7 @@ class AuthViewModel: ObservableObject {
     @Published var isAuthenticated = false
     @Published var isLoading = true
     @Published var errorMessage: String?
+    @Published var isResettingPassword = false
 
     init() {
         Task { await listenToAuthState() }
@@ -21,11 +22,24 @@ class AuthViewModel: ObservableObject {
                 isLoading = false
             case .signedIn:
                 isAuthenticated = true
+            case .passwordRecovery:
+                // User clicked the email link — show reset form
+                isAuthenticated = true
+                isResettingPassword = true
             case .signedOut, .userDeleted:
                 isAuthenticated = false
+                isResettingPassword = false
             default:
                 break
             }
+        }
+    }
+
+    func handleDeepLink(url: URL) async {
+        do {
+            try await AuthService.handleSession(from: url)
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -55,6 +69,18 @@ class AuthViewModel: ObservableObject {
         errorMessage = nil
         do {
             try await AuthService.resetPassword(email: email)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    func updatePassword(_ newPassword: String) async -> Bool {
+        errorMessage = nil
+        do {
+            try await AuthService.updatePassword(newPassword)
+            isResettingPassword = false
             return true
         } catch {
             errorMessage = error.localizedDescription
