@@ -36,10 +36,15 @@ class AuthViewModel: ObservableObject {
     }
 
     func handleDeepLink(url: URL) async {
+        // Detect recovery flow before SDK processes the URL
+        if let fragment = url.fragment, fragment.contains("type=recovery") {
+            isResettingPassword = true
+        }
         do {
             try await AuthService.handleSession(from: url)
         } catch {
             errorMessage = error.localizedDescription
+            isResettingPassword = false
         }
     }
 
