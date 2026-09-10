@@ -83,7 +83,7 @@ struct TimeGridView: View {
     }
 }
 
-// MARK: - Current time indicator (full width)
+// MARK: - Current time indicator (full width, Apple Calendar style)
 
 struct CurrentTimeLineFullView: View {
     let hourLabelWidth: CGFloat
@@ -91,57 +91,66 @@ struct CurrentTimeLineFullView: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 30)) { _ in
-            let mins = Calendar.current.component(.hour, from: Date()) * 60
-                + Calendar.current.component(.minute, from: Date())
-            HStack(spacing: 0) {
-                // Red dot aligned to right edge of hour-label column
-                ZStack(alignment: .trailing) {
-                    Color.clear
-                    Circle()
-                        .fill(Color.red)
-                        .frame(width: 8, height: 8)
-                        .padding(.trailing, 2)
-                }
-                .frame(width: hourLabelWidth)
+            let now  = Date()
+            let mins = Calendar.current.component(.hour, from: now) * 60
+                     + Calendar.current.component(.minute, from: now)
+            let label = String(format: "%02d:%02d", mins / 60, mins % 60)
 
+            ZStack(alignment: .leading) {
                 // Red line across all day columns
-                Rectangle()
-                    .fill(Color.red)
-                    .frame(width: gridWidth - hourLabelWidth, height: 1.5)
+                HStack(spacing: 0) {
+                    Color.clear.frame(width: hourLabelWidth)
+                    Rectangle()
+                        .fill(Color.blue)
+                        .frame(height: 1.5)
+                }
+                .frame(width: gridWidth)
+
+                // Red pill with current time text (replaces the dot)
+                Text(label)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+                    .background(Color.blue)
+                    .cornerRadius(5)
+                    .frame(width: hourLabelWidth, alignment: .trailing)
+                    .padding(.trailing, 2)
             }
-            .offset(y: CGFloat(mins) * Constants.pxPerMinute - 0.75)
+            .offset(y: CGFloat(mins) * Constants.pxPerMinute - 9)
         }
     }
 }
 
-// MARK: - Day header cell
+// MARK: - Day header cell (Apple Calendar style: "周三 – 9月29日")
 
 struct DayHeaderView: View {
     let dateStr: String
 
-    private static let dowFmt: DateFormatter = {
+    private static let fullFmt: DateFormatter = {
         let f = DateFormatter(); f.dateFormat = "EEE"; f.locale = Locale(identifier: "zh_CN"); return f
     }()
-    private static let dayFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "d"; return f
+    private static let dateFmt: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "M月d日"; f.locale = Locale(identifier: "zh_CN"); return f
     }()
 
     var body: some View {
         if let date = dateStr.toDate() {
             let isToday = Calendar.current.isDateInToday(date)
-            VStack(spacing: 1) {
-                Text(Self.dowFmt.string(from: date))
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(isToday ? Color(red: 0.1, green: 0.4, blue: 1) : .secondary)
-                Text(Self.dayFmt.string(from: date))
-                    .font(.system(size: 17, weight: isToday ? .bold : .regular))
-                    .foregroundColor(isToday ? .white : .primary)
-                    .frame(width: 30, height: 30)
-                    .background(isToday ? Color(red: 0.1, green: 0.4, blue: 1) : Color.clear)
-                    .clipShape(Circle())
+            let color: Color = isToday ? .blue : .primary
+            HStack(spacing: 4) {
+                Text(Self.fullFmt.string(from: date))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(isToday ? .blue : .secondary)
+                Text("–")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+                Text(Self.dateFmt.string(from: date))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(color)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 5)
+            .padding(.vertical, 7)
         }
     }
 }

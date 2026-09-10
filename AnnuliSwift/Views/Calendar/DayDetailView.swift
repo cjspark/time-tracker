@@ -78,17 +78,19 @@ private struct WeekStripCell: View {
     }()
 
     var body: some View {
+        let weekday = cal.component(.weekday, from: date)
+        let isWeekend = weekday == 1 || weekday == 7
         VStack(spacing: 2) {
             Text(Self.dowFmt.string(from: date))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(isToday ? .red : .secondary)
+                .foregroundColor(isToday ? .red : (isWeekend ? Color(.tertiaryLabel) : .secondary))
             Text(String(cal.component(.day, from: date)))
                 .font(.system(size: 16, weight: isToday || isShown ? .bold : .regular))
-                .foregroundColor(isToday ? .white : (isShown ? Color.blue : .primary))
+                .foregroundColor(isToday ? .white : (isShown ? .primary : (isWeekend ? .secondary : .primary)))
                 .frame(width: 30, height: 30)
                 .background(
                     isToday ? Color.red :
-                    (isShown ? Color.blue.opacity(0.15) : Color.clear)
+                    (isShown && !isToday ? Color(.systemGray5) : Color.clear)
                 )
                 .clipShape(Circle())
         }
