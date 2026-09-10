@@ -7,16 +7,20 @@ struct DayColumnView: View {
     let onTap: (Int, Int) -> Void
     let onEditEntry: (TimeEntry) -> Void
 
-    // Drag-to-create state
-    @State private var dragStart: Int?    // minutes
+    @State private var dragStart: Int?
     @State private var dragEnd: Int?
     @State private var isDragging = false
-    @State private var longPressTriggered = false
 
     private let snap = Constants.snapMinutes
+    private var isToday: Bool { dateStr == Date.todayString() }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
+            // Subtle today highlight
+            if isToday {
+                Color(red: 0.1, green: 0.4, blue: 1).opacity(0.04)
+            }
+
             // Tap / long-press + drag background
             Color.clear
                 .contentShape(Rectangle())
@@ -43,24 +47,17 @@ struct DayColumnView: View {
                                 let end   = max(yToMinutes(drag.location.y), start + snap).snapped()
                                 onTap(start, end)
                             }
-                            dragStart = nil
-                            dragEnd = nil
-                            isDragging = false
+                            dragStart = nil; dragEnd = nil; isDragging = false
                         }
                 )
 
             // Draft block preview during drag
             if isDragging, let s = dragStart, let e = dragEnd, e > s {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.green.opacity(0.35))
-                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.green, lineWidth: 1.5))
+                    .fill(Color.blue.opacity(0.25))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.blue, lineWidth: 1.5))
                     .frame(width: columnWidth - 4, height: CGFloat(e - s) * Constants.pxPerMinute)
                     .offset(x: 2, y: CGFloat(s) * Constants.pxPerMinute)
-            }
-
-            // Current time line (today only)
-            if dateStr == Date.todayString() {
-                CurrentTimeLineView(columnWidth: columnWidth)
             }
 
             // Existing time blocks
@@ -75,28 +72,5 @@ struct DayColumnView: View {
 
     private func yToMinutes(_ y: CGFloat) -> Int {
         Int(y / Constants.pxPerMinute)
-    }
-}
-
-// MARK: - Current time line
-
-struct CurrentTimeLineView: View {
-    let columnWidth: CGFloat
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 30)) { _ in
-            let mins = Calendar.current.component(.hour, from: Date()) * 60
-                + Calendar.current.component(.minute, from: Date())
-            ZStack(alignment: .leading) {
-                Rectangle()
-                    .fill(Color.red)
-                    .frame(width: columnWidth, height: 1.5)
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 8, height: 8)
-                    .offset(x: -4)
-            }
-            .offset(y: CGFloat(mins) * Constants.pxPerMinute)
-        }
     }
 }
