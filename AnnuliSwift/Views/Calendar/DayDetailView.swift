@@ -20,7 +20,7 @@ struct DayDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             vm.anchorDate = initialDate
-            vm.viewMode   = .day
+            vm.viewMode   = .twoDay
             await vm.load()
         }
         .sheet(isPresented: $vm.showEntrySheet) {
