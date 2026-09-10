@@ -46,11 +46,12 @@ struct WeekStripView: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach(weekDates(for: vm.anchorDate), id: \.self) { date in
-                let dateStr = date.localDateString()
-                let isShown = vm.displayDates.contains(dateStr)
-                let isToday = cal.isDateInToday(date)
+                let dateStr   = date.localDateString()
+                let isAnchor  = vm.displayDates.first == dateStr
+                let isTrail   = vm.displayDates.count > 1 && vm.displayDates[1] == dateStr
+                let isToday   = cal.isDateInToday(date)
                 Button { Task { await vm.goToDate(date) } } label: {
-                    WeekStripCell(date: date, isShown: isShown, isToday: isToday)
+                    WeekStripCell(date: date, isAnchor: isAnchor, isTrail: isTrail, isToday: isToday)
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
@@ -69,7 +70,8 @@ struct WeekStripView: View {
 
 private struct WeekStripCell: View {
     let date: Date
-    let isShown: Bool
+    let isAnchor: Bool
+    let isTrail: Bool
     let isToday: Bool
 
     private let cal = Calendar.current
@@ -78,24 +80,55 @@ private struct WeekStripCell: View {
     }()
 
     var body: some View {
-        let weekday = cal.component(.weekday, from: date)
+        let weekday   = cal.component(.weekday, from: date)
         let isWeekend = weekday == 1 || weekday == 7
+        let isSelected = isAnchor || isTrail
+
         VStack(spacing: 2) {
             Text(Self.dowFmt.string(from: date))
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(isToday ? .red : (isWeekend ? Color(.tertiaryLabel) : .secondary))
+
             Text(String(cal.component(.day, from: date)))
-                .font(.system(size: 16, weight: isToday || isShown ? .bold : .regular))
-                .foregroundColor(isToday ? .white : (isShown ? .primary : (isWeekend ? .secondary : .primary)))
-                .frame(width: 30, height: 30)
-                .background(
-                    isToday ? Color.red :
-                    (isShown && !isToday ? Color(.systemGray5) : Color.clear)
+                .font(.system(size: 16, weight: isSelected ? .bold : .regular))
+                .foregroundColor(
+                    isSelected ? .white :
+                    isToday    ? .red   :
+                    isWeekend  ? .secondary : .primary
                 )
+                .frame(width: 30, height: 30)
+                .background(circleBg)
                 .clipShape(Circle())
+
+            Text(lunarLabel(date))
+                .font(.system(size: 9))
+                .foregroundColor(isToday ? .red : Color(.tertiaryLabel))
         }
         .padding(.vertical, 2)
     }
+
+    private var circleBg: Color {
+        if isAnchor  { return isToday ? .red : Color(.systemGray4) }
+        if isTrail   { return Color(.systemGray5) }
+        return .clear
+    }
+}
+
+private func lunarLabel(_ date: Date) -> String {
+    let cc = Calendar(identifier: .chinese)
+    let c  = cc.dateComponents([.month, .day, .isLeapMonth], from: date)
+    guard let day = c.day, let month = c.month else { return "" }
+    if day == 1 {
+        let names = ["正月","二月","三月","四月","五月","六月",
+                     "七月","八月","九月","十月","冬月","腊月"]
+        guard month >= 1 && month <= 12 else { return "" }
+        return (c.isLeapMonth ?? false) ? "闰\(names[month-1])" : names[month-1]
+    }
+    let days = ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十",
+                "十一","十二","十三","十四","十五","十六","十七","十八","十九","二十",
+                "廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"]
+    guard day >= 1 && day <= 30 else { return "" }
+    return days[day - 1]
 }
 
 // MARK: - Shared components (kept for compatibility)

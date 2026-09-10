@@ -18,7 +18,7 @@ struct DayColumnView: View {
         ZStack(alignment: .topLeading) {
             // Subtle today highlight
             if isToday {
-                Color(red: 0.1, green: 0.4, blue: 1).opacity(0.04)
+                Color.red.opacity(0.04)
             }
 
             // Tap / long-press + drag background

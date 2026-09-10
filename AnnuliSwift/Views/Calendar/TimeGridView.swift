@@ -62,10 +62,17 @@ struct TimeGridView: View {
                                 }
                             }
 
-                            // 4. Current-time indicator spanning all columns
+                            // 4. Current-time indicator — only on today's column
+                            let todayStr = Date().localDateString()
+                            let todayIdx = vm.displayDates.firstIndex(of: todayStr)
+                            let todayColX: CGFloat? = todayIdx.map {
+                                hourLabelWidth + CGFloat($0) * colWidth
+                            }
                             CurrentTimeLineFullView(
                                 hourLabelWidth: hourLabelWidth,
-                                gridWidth: gridWidth
+                                gridWidth: gridWidth,
+                                todayColumnX: todayColX,
+                                columnWidth: colWidth
                             )
                         }
                         .frame(height: Constants.totalGridHeight)
@@ -83,46 +90,68 @@ struct TimeGridView: View {
     }
 }
 
-// MARK: - Current time indicator (full width, Apple Calendar style)
+// MARK: - Current time indicator (today column only, Apple Calendar style)
 
 struct CurrentTimeLineFullView: View {
     let hourLabelWidth: CGFloat
     let gridWidth: CGFloat
+    let todayColumnX: CGFloat?   // nil = today not in view
+    let columnWidth: CGFloat
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 30)) { _ in
-            let now  = Date()
-            let mins = Calendar.current.component(.hour, from: now) * 60
-                     + Calendar.current.component(.minute, from: now)
-            let label = String(format: "%02d:%02d", mins / 60, mins % 60)
+        if let colX = todayColumnX {
+            TimelineView(.animation(minimumInterval: 30)) { _ in
+                let now  = Date()
+                let mins = Calendar.current.component(.hour, from: now) * 60
+                         + Calendar.current.component(.minute, from: now)
+                let label = String(format: "%02d:%02d", mins / 60, mins % 60)
 
-            ZStack(alignment: .leading) {
-                // Red line across all day columns
-                HStack(spacing: 0) {
-                    Color.clear.frame(width: hourLabelWidth)
-                    Rectangle()
-                        .fill(Color.blue)
-                        .frame(height: 1.5)
+                ZStack(alignment: .leading) {
+                    // Red line — only spans today's column
+                    HStack(spacing: 0) {
+                        Color.clear.frame(width: colX)
+                        Rectangle()
+                            .fill(Color.red)
+                            .frame(width: columnWidth, height: 1.5)
+                        Spacer()
+                    }
+                    .frame(width: gridWidth)
+
+                    // Red time pill in hour-label area
+                    Text(label)
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.red)
+                        .cornerRadius(5)
+                        .frame(width: hourLabelWidth, alignment: .trailing)
+                        .padding(.trailing, 2)
                 }
-                .frame(width: gridWidth)
-
-                // Red pill with current time text (replaces the dot)
-                Text(label)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
-                    .background(Color.blue)
-                    .cornerRadius(5)
-                    .frame(width: hourLabelWidth, alignment: .trailing)
-                    .padding(.trailing, 2)
+                .offset(y: CGFloat(mins) * Constants.pxPerMinute - 9)
             }
-            .offset(y: CGFloat(mins) * Constants.pxPerMinute - 9)
         }
     }
 }
 
-// MARK: - Day header cell (Apple Calendar style: "周三 – 9月29日")
+// MARK: - Day header cell (Apple Calendar style: "周三 – 9月9日" + lunar + red underline for today)
+
+private func lunarLabel(_ date: Date) -> String {
+    let cc = Calendar(identifier: .chinese)
+    let c  = cc.dateComponents([.month, .day, .isLeapMonth], from: date)
+    guard let day = c.day, let month = c.month else { return "" }
+    if day == 1 {
+        let names = ["正月","二月","三月","四月","五月","六月",
+                     "七月","八月","九月","十月","冬月","腊月"]
+        guard month >= 1 && month <= 12 else { return "" }
+        return (c.isLeapMonth ?? false) ? "闰\(names[month-1])" : names[month-1]
+    }
+    let days = ["初一","初二","初三","初四","初五","初六","初七","初八","初九","初十",
+                "十一","十二","十三","十四","十五","十六","十七","十八","十九","二十",
+                "廿一","廿二","廿三","廿四","廿五","廿六","廿七","廿八","廿九","三十"]
+    guard day >= 1 && day <= 30 else { return "" }
+    return days[day - 1]
+}
 
 struct DayHeaderView: View {
     let dateStr: String
@@ -137,20 +166,33 @@ struct DayHeaderView: View {
     var body: some View {
         if let date = dateStr.toDate() {
             let isToday = Calendar.current.isDateInToday(date)
-            let color: Color = isToday ? .blue : .primary
-            HStack(spacing: 4) {
-                Text(Self.fullFmt.string(from: date))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(isToday ? .blue : .secondary)
-                Text("–")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                Text(Self.dateFmt.string(from: date))
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(color)
+            let accent: Color = isToday ? .red : .primary
+
+            VStack(spacing: 1) {
+                HStack(spacing: 4) {
+                    Text(Self.fullFmt.string(from: date))
+                        .foregroundColor(isToday ? .red : .secondary)
+                    Text("–")
+                        .foregroundColor(.secondary)
+                    Text(Self.dateFmt.string(from: date))
+                        .foregroundColor(accent)
+                }
+                .font(.system(size: 12, weight: .semibold))
+
+                Text(lunarLabel(date))
+                    .font(.system(size: 10))
+                    .foregroundColor(isToday ? .red : Color(.tertiaryLabel))
+
+                if isToday {
+                    Rectangle()
+                        .fill(Color.red)
+                        .frame(height: 1.5)
+                        .padding(.horizontal, 14)
+                        .padding(.top, 1)
+                }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 7)
+            .padding(.vertical, 6)
         }
     }
 }
