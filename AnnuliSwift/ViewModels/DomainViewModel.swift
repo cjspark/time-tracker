@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import Supabase
 
 @MainActor
@@ -6,7 +7,7 @@ class DomainViewModel: ObservableObject {
     @Published var domains: [Domain] = []
     @Published var outputs: [DomainOutput] = []
     @Published var hobbyMinutes: [String: Int] = [:]   // label → minutes for selectedYear
-    @Published var efficiencyMap: [String: String] = [] // "domainId_year" → label
+    @Published var efficiencyMap: [String: String] = [:]  // "domainId_year" → label
     @Published var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @Published var isLoading = false
 
