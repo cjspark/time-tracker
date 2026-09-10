@@ -32,6 +32,14 @@ if pkg_entries.any?
   changed = true
 end
 
+# 同时从项目文件引用中彻底删除 Package.swift（防止被步骤3重新加回）
+pkg_refs = project.files.select { |f| File.basename(f.path.to_s) == 'Package.swift' }
+if pkg_refs.any?
+  puts "从项目中移除 Package.swift 文件引用..."
+  pkg_refs.each { |f| f.remove_from_project }
+  changed = true
+end
+
 # ── 2. 按 basename 去重 ──────────────────────────────────────────────
 by_name = Hash.new { |h, k| h[k] = [] }
 phase.files.each do |bf|

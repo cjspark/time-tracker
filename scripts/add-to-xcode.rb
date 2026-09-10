@@ -45,6 +45,7 @@ compiled_uuids = Set.new(compile_phase.files.map { |bf| bf.file_ref&.uuid })
 # ── 步骤 3：确保所有已有文件引用都在编译阶段 ──────────────────────
 project.files.each do |file_ref|
   next unless file_ref.path.to_s.end_with?('.swift')
+  next if File.basename(file_ref.path.to_s) == 'Package.swift'
   unless compiled_uuids.include?(file_ref.uuid)
     compile_phase.add_file_reference(file_ref)
     compiled_uuids << file_ref.uuid
