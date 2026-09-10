@@ -4,6 +4,7 @@ struct TreeRootView: View {
     @StateObject private var vm = TreeViewModel()
     @EnvironmentObject private var prefs: PrefsViewModel
     @State private var selectedTab = 0
+    @State private var showDomainSettings = false
 
     var body: some View {
         NavigationView {
@@ -28,6 +29,11 @@ struct TreeRootView: View {
             }
             .navigationTitle("生命树")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button { showDomainSettings = true } label: {
+                        Image(systemName: "square.3.layers.3d")
+                    }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     let currentYear = Calendar.current.component(.year, from: Date())
                     Picker("年份", selection: $vm.selectedYear) {
@@ -41,6 +47,9 @@ struct TreeRootView: View {
         }
         .task { await vm.load(prefs: prefs) }
         .onChange(of: vm.selectedYear) { _ in Task { await vm.load(prefs: prefs) } }
+        .sheet(isPresented: $showDomainSettings) {
+            DomainSettingsView().environmentObject(prefs)
+        }
         .sheet(isPresented: $vm.showAchievementSheet) {
             AchievementSheet(category: vm.sheetCategory, year: vm.selectedYear) { insert in
                 Task { await vm.addAchievement(insert: insert) }
