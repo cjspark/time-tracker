@@ -45,7 +45,15 @@ struct HobbyLeaf: Identifiable {
     var isInactive: Bool
 }
 
-// MARK: - DB row types
+// MARK: - HobbyItemMeta (hobby + domain assignment + global priority)
+
+struct HobbyItemMeta: Identifiable {
+    var id: String { hobby.label }
+    var hobby: HobbyItem
+    var domainId: UUID?
+    var priority: Int   // lower index = higher priority; Int.max = unassigned
+}
+
 
 struct HobbyPreference: Codable {
     var userId: UUID

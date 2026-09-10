@@ -16,6 +16,8 @@ class PrefsViewModel: ObservableObject {
     @Published var inactiveHobbies: [String]        = []
     @Published var catOrder: [String]               = []
     @Published var timeCategoryMap: [String: String] = [:]
+    @Published var hobbyDomainMap: [String: String]  = [:]  // label → domain UUID string
+    @Published var hobbyPriority: [String]           = []   // ordered labels, index 0 = highest
 
     private var svc: PrefsService { PrefsService.shared }
 
@@ -30,11 +32,15 @@ class PrefsViewModel: ObservableObject {
         async let ia  = svc.get(.hobbyInactive,        as: [String].self,              fallback: [])
         async let ord = svc.get(.hobbyCatOrder,        as: [String].self,              fallback: [])
         async let tc  = svc.get(.hobbyTimeCategory,    as: [String: String].self,      fallback: [:])
+        async let dm  = svc.get(.hobbyDomainMap,       as: [String: String].self,      fallback: [:])
+        async let hp  = svc.get(.hobbyPriority,        as: [String].self,              fallback: [])
 
         let (a, b, c, d, e, f, g, h, i, j) = await (cc, ch, hh, hc, cr, co, lr, ia, ord, tc)
+        let (k, l) = await (dm, hp)
         customCategories = a; customHobbies = b; hiddenHobbies = c; hiddenCategories = d
         catRenames = e; colorOverrides = f; labelRenames = g; inactiveHobbies = h
         catOrder = i; timeCategoryMap = j
+        hobbyDomainMap = k; hobbyPriority = l
     }
 
     // Resolved hobbies
@@ -119,5 +125,45 @@ class PrefsViewModel: ObservableObject {
     func addCustomCategory(_ name: String) async {
         customCategories.append(name)
         await svc.set(.hobbyCustomCategories, value: customCategories)
+    }
+
+    // MARK: - Domain & Priority
+
+    func domainId(for hobbyLabel: String) -> UUID? {
+        guard let str = hobbyDomainMap[hobbyLabel] else { return nil }
+        return UUID(uuidString: str)
+    }
+
+    func priorityIndex(of hobbyLabel: String) -> Int {
+        hobbyPriority.firstIndex(of: hobbyLabel) ?? Int.max
+    }
+
+    func setDomain(_ domainId: UUID?, for hobbyLabel: String) async {
+        if let id = domainId {
+            hobbyDomainMap[hobbyLabel] = id.uuidString
+        } else {
+            hobbyDomainMap.removeValue(forKey: hobbyLabel)
+        }
+        await svc.set(.hobbyDomainMap, value: hobbyDomainMap)
+    }
+
+    func setPriorityOrder(_ orderedLabels: [String]) async {
+        hobbyPriority = orderedLabels
+        await svc.set(.hobbyPriority, value: hobbyPriority)
+    }
+
+    var resolvedHobbiesWithMeta: [HobbyItemMeta] {
+        resolvedHobbies.map { hobby in
+            HobbyItemMeta(
+                hobby: hobby,
+                domainId: domainId(for: hobby.label),
+                priority: priorityIndex(of: hobby.label)
+            )
+        }
+        .sorted { $0.priority < $1.priority }
+    }
+
+    func hobbies(in domainId: UUID) -> [HobbyItemMeta] {
+        resolvedHobbiesWithMeta.filter { $0.domainId == domainId }
     }
 }

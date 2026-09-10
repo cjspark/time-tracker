@@ -93,6 +93,8 @@ enum PrefsKey: String {
     case hobbyInactive           = "hobby_inactive"
     case hobbyCatOrder           = "hobby_cat_order"
     case hobbyTimeCategory       = "hobby_time_category"
+    case hobbyDomainMap          = "hobby_domain_map"    // [String: String] label → domain UUID
+    case hobbyPriority           = "hobby_priority"      // [String] ordered labels, index 0 = highest
 }
 
 // MARK: - AnyEncodable / AnyDecodable helpers
