@@ -1,10 +1,16 @@
 import SwiftUI
+import Supabase
 
 @MainActor
 class DomainViewModel: ObservableObject {
     @Published var domains: [Domain] = []
     @Published var outputs: [DomainOutput] = []
+    @Published var hobbyMinutes: [String: Int] = [:]   // label → minutes for selectedYear
+    @Published var efficiencyMap: [String: String] = [] // "domainId_year" → label
+    @Published var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @Published var isLoading = false
+
+    // MARK: - Load
 
     func load() async {
         isLoading = true
@@ -17,6 +23,27 @@ class DomainViewModel: ObservableObject {
             outputs = oo
         } catch {}
     }
+
+    func loadStats(prefs: PrefsViewModel) async {
+        do {
+            guard let userId = AuthService.currentUserId else { return }
+            let yearEntries: [TimeEntry] = try await supabase
+                .from("time_entries").select()
+                .eq("user_id", value: userId)
+                .like("date", pattern: "\(selectedYear)-%")
+                .execute().value
+
+            var map: [String: Int] = [:]
+            for e in yearEntries { map[e.hobby, default: 0] += e.durationMinutes }
+            hobbyMinutes = map
+        } catch {}
+
+        efficiencyMap = await PrefsService.shared.get(
+            .domainEfficiency, as: [String: String].self, fallback: [:]
+        )
+    }
+
+    // MARK: - Domain CRUD
 
     func createDomain(name: String, color: String) async throws {
         let d = try await DomainService.create(
@@ -36,6 +63,8 @@ class DomainViewModel: ObservableObject {
         outputs.removeAll { $0.domainId == domain.id }
     }
 
+    // MARK: - Output CRUD
+
     func addOutput(form: OutputForm) async throws {
         let o = try await OutputService.save(form: form)
         outputs.append(o)
@@ -53,5 +82,19 @@ class DomainViewModel: ObservableObject {
 
     func outputs(for domainId: UUID) -> [DomainOutput] {
         outputs.filter { $0.domainId == domainId }.sorted { $0.date > $1.date }
+    }
+
+    // MARK: - Efficiency annotation
+
+    func efficiency(for domainId: UUID, year: Int) -> String? {
+        let v = efficiencyMap["\(domainId.uuidString)_\(year)"] ?? ""
+        return v.isEmpty ? nil : v
+    }
+
+    func setEfficiency(_ label: String, for domainId: UUID, year: Int) async {
+        let key = "\(domainId.uuidString)_\(year)"
+        if label.isEmpty { efficiencyMap.removeValue(forKey: key) }
+        else             { efficiencyMap[key] = label }
+        await PrefsService.shared.set(.domainEfficiency, value: efficiencyMap)
     }
 }

@@ -1,62 +1,52 @@
 import SwiftUI
 
 struct TreeRootView: View {
-    @StateObject private var vm = TreeViewModel()
+    @StateObject private var vm = DomainViewModel()
     @EnvironmentObject private var prefs: PrefsViewModel
-    @State private var selectedTab = 0
     @State private var showDomainSettings = false
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Sub-tab picker
-                Picker("视图", selection: $selectedTab) {
-                    Text("列表").tag(0)
-                    Text("森林").tag(1)
-                    Text("树形").tag(2)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-
-                Group {
-                    switch selectedTab {
-                    case 0: TreeListView(vm: vm)
-                    case 1: TreeBoardView(vm: vm)
-                    default: TreeCanvasView(vm: vm)
-                    }
+            Group {
+                if vm.isLoading {
+                    ProgressView("加载中…")
+                } else if vm.domains.isEmpty {
+                    EmptyDomainsView { showDomainSettings = true }
+                } else {
+                    LifeTreeView(vm: vm)
+                        .environmentObject(prefs)
                 }
             }
-            .navigationTitle("生命树")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button { showDomainSettings = true } label: {
                         Image(systemName: "square.3.layers.3d")
                     }
                 }
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .principal) {
                     let currentYear = Calendar.current.component(.year, from: Date())
                     Picker("年份", selection: $vm.selectedYear) {
                         ForEach((currentYear - 3)...currentYear, id: \.self) { y in
-                            Text("\(y)").tag(y)
+                            Text(String(y)).tag(y)
                         }
                     }
                     .pickerStyle(.menu)
                 }
             }
         }
-        .task { await vm.load(prefs: prefs) }
-        .onChange(of: vm.selectedYear) { _ in Task { await vm.load(prefs: prefs) } }
+        .task {
+            await vm.load()
+            await vm.loadStats(prefs: prefs)
+        }
+        .onChange(of: vm.selectedYear) { _ in
+            Task { await vm.loadStats(prefs: prefs) }
+        }
+        .onChange(of: showDomainSettings) { isShowing in
+            if !isShowing { Task { await vm.load() } }
+        }
         .sheet(isPresented: $showDomainSettings) {
             DomainSettingsView().environmentObject(prefs)
-        }
-        .sheet(isPresented: $vm.showAchievementSheet) {
-            AchievementSheet(category: vm.sheetCategory, year: vm.selectedYear) { insert in
-                Task { await vm.addAchievement(insert: insert) }
-            }
-        }
-        .sheet(item: $vm.selectedAchievement) { ach in
-            RecordSheet(achievement: ach, vm: vm)
         }
     }
 }
