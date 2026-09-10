@@ -19,9 +19,6 @@ struct MainTabView: View {
 
                 ReviewRootView()
                     .tabItem { Label("复盘", systemImage: "chart.bar") }
-
-                SettingsView()
-                    .tabItem { Label("设置", systemImage: "gearshape") }
             }
 
             // Timer bar floats above tab bar

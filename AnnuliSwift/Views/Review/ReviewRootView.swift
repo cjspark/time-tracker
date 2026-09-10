@@ -4,6 +4,7 @@ import Charts
 struct ReviewRootView: View {
     @StateObject private var vm = ReviewViewModel()
     @EnvironmentObject private var prefs: PrefsViewModel
+    @State private var showSettings = false
 
     var body: some View {
         NavigationView {
@@ -31,6 +32,16 @@ struct ReviewRootView: View {
                 }
             }
             .navigationTitle("复盘")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button { showSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
         }
         .task { await vm.load(prefs: prefs) }
         .onChange(of: vm.weekOffset) { _ in Task { await vm.load(prefs: prefs) } }
