@@ -18,7 +18,7 @@ struct DayColumnView: View {
         ZStack(alignment: .topLeading) {
             // Subtle today highlight
             if isToday {
-                Color.red.opacity(0.04)
+                EU.terracotta.opacity(0.04)
             }
 
             // Tap / long-press + drag background
@@ -54,8 +54,8 @@ struct DayColumnView: View {
             // Draft block preview during drag
             if isDragging, let s = dragStart, let e = dragEnd, e > s {
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.blue.opacity(0.25))
-                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(Color.blue, lineWidth: 1.5))
+                    .fill(EU.accent.opacity(0.25))
+                    .overlay(RoundedRectangle(cornerRadius: 4).stroke(EU.accent, lineWidth: 1.5))
                     .frame(width: columnWidth - 4, height: CGFloat(e - s) * Constants.pxPerMinute)
                     .offset(x: 2, y: CGFloat(s) * Constants.pxPerMinute)
             }

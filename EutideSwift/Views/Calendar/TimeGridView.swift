@@ -21,7 +21,7 @@ struct TimeGridView: View {
                             .frame(width: colWidth)
                     }
                 }
-                .background(Color(.systemBackground))
+                .background(EU.bgPage)
 
                 Divider()
 
@@ -111,7 +111,7 @@ struct CurrentTimeLineFullView: View {
                     HStack(spacing: 0) {
                         Color.clear.frame(width: colX)
                         Rectangle()
-                            .fill(Color.red)
+                            .fill(EU.terracotta)
                             .frame(width: columnWidth, height: 1.5)
                         Spacer()
                     }
@@ -123,7 +123,7 @@ struct CurrentTimeLineFullView: View {
                         .foregroundColor(.white)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 2)
-                        .background(Color.red)
+                        .background(EU.terracotta)
                         .cornerRadius(5)
                         .frame(width: hourLabelWidth, alignment: .trailing)
                         .padding(.trailing, 2)
@@ -166,12 +166,12 @@ struct DayHeaderView: View {
     var body: some View {
         if let date = dateStr.toDate() {
             let isToday = Calendar.current.isDateInToday(date)
-            let accent: Color = isToday ? .red : .primary
+            let accent: Color = isToday ? EU.terracotta : .primary
 
             VStack(spacing: 1) {
                 HStack(spacing: 4) {
                     Text(Self.fullFmt.string(from: date))
-                        .foregroundColor(isToday ? .red : .secondary)
+                        .foregroundColor(isToday ? EU.terracotta : .secondary)
                     Text("–")
                         .foregroundColor(.secondary)
                     Text(Self.dateFmt.string(from: date))
@@ -181,11 +181,11 @@ struct DayHeaderView: View {
 
                 Text(lunarLabel(date))
                     .font(.system(size: 10))
-                    .foregroundColor(isToday ? .red : Color(.tertiaryLabel))
+                    .foregroundColor(isToday ? EU.terracotta : Color(.tertiaryLabel))
 
                 if isToday {
                     Rectangle()
-                        .fill(Color.red)
+                        .fill(EU.terracotta)
                         .frame(height: 1.5)
                         .padding(.horizontal, 14)
                         .padding(.top, 1)

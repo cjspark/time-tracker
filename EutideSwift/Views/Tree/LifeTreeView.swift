@@ -116,7 +116,7 @@ private struct DomainCard: View {
                 showAddOutput = true
             } label: {
                 Label("记录产出", systemImage: "plus")
-                    .font(.system(size: 13)).foregroundColor(.blue)
+                    .font(.system(size: 13)).foregroundColor(EU.accent)
             }
             .padding(.horizontal, 16).padding(.vertical, 9)
 
@@ -127,7 +127,7 @@ private struct DomainCard: View {
                 Task { await vm.setEfficiency(label, for: domain.id, year: vm.selectedYear) }
             }
         }
-        .background(Color(.secondarySystemBackground))
+        .background(EU.bgCard)
         .cornerRadius(14)
         .sheet(isPresented: $showAddOutput) {
             AddOutputSheet(vm: vm, domainId: domain.id)
@@ -178,7 +178,7 @@ private struct HobbyInputRow: View {
                     .foregroundColor(minutes > 0 ? .primary : Color(.tertiaryLabel))
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2).fill(Color(.systemGray5)).frame(height: 4)
+                        RoundedRectangle(cornerRadius: 2).fill(EU.bgCardAlt).frame(height: 4)
                         RoundedRectangle(cornerRadius: 2)
                             .fill(Color(hex: meta.hobby.color))
                             .frame(
@@ -212,9 +212,9 @@ private struct OutputRow: View {
                     Text(output.title).font(.system(size: 14, weight: .medium))
                     if let c = output.count {
                         Text("\(c)")
-                            .font(.system(size: 12, weight: .semibold)).foregroundColor(.blue)
+                            .font(.system(size: 12, weight: .semibold)).foregroundColor(EU.accent)
                             .padding(.horizontal, 7).padding(.vertical, 1)
-                            .background(Color.blue.opacity(0.1)).cornerRadius(5)
+                            .background(EU.accent.opacity(0.1)).cornerRadius(5)
                     }
                 }
                 if let notes = output.notes, !notes.isEmpty {
@@ -265,7 +265,7 @@ private struct EfficiencyRow: View {
                         .font(.system(size: 10)).foregroundColor(.secondary)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Color(.tertiarySystemBackground))
+                .background(EU.bgCardAlt)
                 .cornerRadius(8)
             }
         }
@@ -358,7 +358,7 @@ private struct UnassignedCard: View {
                 .padding(.horizontal, 16).padding(.vertical, 9)
             }
         }
-        .background(Color(.secondarySystemBackground))
+        .background(EU.bgCard)
         .cornerRadius(14).opacity(0.7)
     }
 }
@@ -370,7 +370,7 @@ struct EmptyDomainsView: View {
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "square.3.layers.3d")
-                .font(.system(size: 52)).foregroundColor(Color(.systemGray3))
+                .font(.system(size: 52)).foregroundColor(EU.textFaint)
             Text("还没有领域").font(.title3.weight(.semibold))
             Text("点击左上角图标，创建第一个领域\n（如：健康、英语、投资）")
                 .font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)

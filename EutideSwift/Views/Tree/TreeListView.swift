@@ -36,7 +36,7 @@ struct BranchCardView: View {
                 }
             }
             .buttonStyle(.plain)
-            .listRowBackground(Color(.secondarySystemBackground))
+            .listRowBackground(EU.bgCard)
 
             if isExpanded {
                 // Hobby bars
@@ -82,7 +82,7 @@ struct BranchCardView: View {
                 } label: {
                     Label("添加成就", systemImage: "plus.circle")
                         .font(.system(size: 14))
-                        .foregroundColor(.blue)
+                        .foregroundColor(EU.accent)
                 }
             }
         }
@@ -111,7 +111,7 @@ struct HobbyBarRow: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(.systemFill))
+                        .fill(EU.bgCardAlt)
                         .frame(height: 6)
                     RoundedRectangle(cornerRadius: 3)
                         .fill(Color(hex: hobby.color).opacity(hobby.isInactive ? 0.3 : 1))
@@ -195,10 +195,10 @@ struct ArchivedAchievementRow: View {
             } label: {
                 Text("取消归档")
                     .font(.system(size: 11))
-                    .foregroundColor(.blue)
+                    .foregroundColor(EU.accent)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.blue.opacity(0.1))
+                    .background(EU.accent.opacity(0.1))
                     .cornerRadius(6)
             }
             .buttonStyle(.plain)

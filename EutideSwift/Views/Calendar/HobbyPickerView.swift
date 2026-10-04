@@ -23,7 +23,7 @@ struct HobbyPickerView: View {
                         Spacer()
                         if hobby.label == selected {
                             Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
+                                .foregroundColor(EU.accent)
                         }
                     }
                 }

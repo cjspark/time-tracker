@@ -19,7 +19,7 @@ struct ResetPasswordView: View {
             VStack(spacing: 8) {
                 Image(systemName: "lock.rotation")
                     .font(.system(size: 44))
-                    .foregroundColor(.blue)
+                    .foregroundColor(EU.accent)
                     .padding(.bottom, 8)
                 Text("设置新密码")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
@@ -71,7 +71,7 @@ struct ResetPasswordView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(14)
-                    .background(canSubmit ? Color.blue : Color.blue.opacity(0.4))
+                    .background(canSubmit ? EU.accent : EU.accent.opacity(0.4))
                     .cornerRadius(10)
                 }
                 .disabled(!canSubmit)
@@ -80,7 +80,7 @@ struct ResetPasswordView: View {
 
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(EU.bgPage)
         .alert("密码已更新", isPresented: $done) {
             Button("好的", role: .cancel) {}
         } message: {
@@ -106,7 +106,7 @@ struct ResetPasswordView: View {
             }
         }
         .padding(14)
-        .background(Color(.secondarySystemBackground))
+        .background(EU.bgCard)
         .cornerRadius(10)
     }
 }

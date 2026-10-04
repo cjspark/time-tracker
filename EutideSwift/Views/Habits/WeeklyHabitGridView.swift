@@ -57,12 +57,12 @@ struct WeeklyHabitGridView: View {
                                         .foregroundColor(.secondary)
                                     Text(day.dayNumber)
                                         .font(.system(size: 12, weight: day.isToday ? .bold : .regular))
-                                        .foregroundColor(day.isToday ? .blue : .primary)
+                                        .foregroundColor(day.isToday ? EU.accent : .primary)
                                 }
                                 .frame(maxWidth: .infinity)
                             }
                         }
-                        .listRowBackground(Color(.secondarySystemBackground))
+                        .listRowBackground(EU.bgCard)
 
                         ForEach(habits) { habit in
                             HabitGridRow(habit: habit, weekDates: weekDates, vm: vm)
@@ -118,16 +118,16 @@ struct HabitGridRow: View {
                         // Mini progress bar
                         GeometryReader { geo in
                             ZStack(alignment: .leading) {
-                                Capsule().fill(Color(.systemFill)).frame(height: 4)
+                                Capsule().fill(EU.bgCardAlt).frame(height: 4)
                                 Capsule()
-                                    .fill(Color.green)
+                                    .fill(EU.accent)
                                     .frame(width: geo.size.width * min(progressFraction, 1), height: 4)
                             }
                         }
                         .frame(height: 4)
                         Text("\(weekCount)/\(weekTarget)")
                             .font(.system(size: 10))
-                            .foregroundColor(weekCount >= weekTarget ? .green : .secondary)
+                            .foregroundColor(weekCount >= weekTarget ? EU.accent : .secondary)
                             .fixedSize()
                     }
                 }
@@ -160,11 +160,11 @@ struct HabitGridRow: View {
                 } label: {
                     ZStack {
                         Circle()
-                            .fill(checkedIn ? Color.green : Color(.systemFill))
+                            .fill(checkedIn ? EU.accent : EU.bgCardAlt)
                             .frame(width: 28, height: 28)
                         if day.isToday {
                             Circle()
-                                .stroke(Color.blue, lineWidth: 2)
+                                .stroke(EU.accent, lineWidth: 2)
                                 .frame(width: 28, height: 28)
                         }
                         if checkedIn {
@@ -218,10 +218,10 @@ struct HabitEditSheet: View {
                                 targetDraft = "\(v)"
                             }
                             .font(.system(size: 13))
-                            .foregroundColor(targetDraft == "\(v)" ? .white : .blue)
+                            .foregroundColor(targetDraft == "\(v)" ? .white : EU.accent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
-                            .background(targetDraft == "\(v)" ? Color.blue : Color.blue.opacity(0.1))
+                            .background(targetDraft == "\(v)" ? EU.accent : EU.accent.opacity(0.1))
                             .cornerRadius(6)
                         }
                     }
@@ -320,10 +320,10 @@ struct AddHabitSheet: View {
                                 targetText = "\(v)"
                             }
                             .font(.system(size: 12))
-                            .foregroundColor(targetText == "\(v)" ? .white : .blue)
+                            .foregroundColor(targetText == "\(v)" ? .white : EU.accent)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
-                            .background(targetText == "\(v)" ? Color.blue : Color.blue.opacity(0.1))
+                            .background(targetText == "\(v)" ? EU.accent : EU.accent.opacity(0.1))
                             .cornerRadius(6)
                         }
                     }

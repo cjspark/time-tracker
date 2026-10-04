@@ -69,7 +69,7 @@ struct RecordSheet: View {
                                     } label: {
                                         Image(systemName: "pencil")
                                             .font(.system(size: 12))
-                                            .foregroundColor(.blue)
+                                            .foregroundColor(EU.accent)
                                     }
                                     .buttonStyle(.plain)
                                 }
@@ -143,7 +143,7 @@ struct RecordSheet: View {
                         Button("取消归档") {
                             Task { await vm.unarchiveAchievement(id: achievement.id); dismiss() }
                         }
-                        .foregroundColor(.blue)
+                        .foregroundColor(EU.accent)
                     } else if achievement.progress >= 1 {
                         Button("归档为里程碑") {
                             Task { await vm.archiveAchievement(id: achievement.id); dismiss() }
@@ -245,7 +245,7 @@ struct RecordSheet: View {
                     Spacer()
                     Text(formattedValue(child.targetValue) + " " + child.unit)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.green)
+                        .foregroundColor(EU.accent)
                 }
             }
 
@@ -254,7 +254,7 @@ struct RecordSheet: View {
             } label: {
                 Label("添加投资子项", systemImage: "plus.circle")
                     .font(.system(size: 14))
-                    .foregroundColor(.blue)
+                    .foregroundColor(EU.accent)
             }
         } header: {
             HStack {

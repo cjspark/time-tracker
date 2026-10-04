@@ -9,7 +9,7 @@ struct DayDetailView: View {
         VStack(spacing: 0) {
             // Week strip — tap to change displayed day
             WeekStripView(vm: vm)
-                .background(Color(.systemBackground))
+                .background(EU.bgPage)
 
             Divider()
 
@@ -87,13 +87,13 @@ private struct WeekStripCell: View {
         VStack(spacing: 2) {
             Text(Self.dowFmt.string(from: date))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(isToday ? .red : (isWeekend ? Color(.tertiaryLabel) : .secondary))
+                .foregroundColor(isToday ? EU.terracotta : (isWeekend ? Color(.tertiaryLabel) : .secondary))
 
             Text(String(cal.component(.day, from: date)))
                 .font(.system(size: 16, weight: isSelected ? .bold : .regular))
                 .foregroundColor(
                     isSelected ? .white :
-                    isToday    ? .red   :
+                    isToday    ? EU.terracotta   :
                     isWeekend  ? .secondary : .primary
                 )
                 .frame(width: 30, height: 30)
@@ -102,14 +102,14 @@ private struct WeekStripCell: View {
 
             Text(lunarLabel(date))
                 .font(.system(size: 9))
-                .foregroundColor(isToday ? .red : Color(.tertiaryLabel))
+                .foregroundColor(isToday ? EU.terracotta : Color(.tertiaryLabel))
         }
         .padding(.vertical, 2)
     }
 
     private var circleBg: Color {
-        if isAnchor  { return isToday ? .red : Color(.systemGray4) }
-        if isTrail   { return Color(.systemGray5) }
+        if isAnchor  { return isToday ? EU.terracotta : EU.borderSoft }
+        if isTrail   { return EU.bgCardAlt }
         return .clear
     }
 }
@@ -142,10 +142,10 @@ struct ViewSwitcherView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(selected == mode ? .white : .primary)
                     .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(selected == mode ? Color.blue : Color.clear)
+                    .background(selected == mode ? EU.accent : Color.clear)
             }
         }
-        .background(Color(.secondarySystemBackground))
+        .background(EU.bgCard)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }

@@ -141,7 +141,7 @@ struct DomainDetailView: View {
                             Text(hobby.displayLabel).foregroundColor(.primary)
                             Spacer()
                             if isAssigned {
-                                Image(systemName: "checkmark").foregroundColor(.blue)
+                                Image(systemName: "checkmark").foregroundColor(EU.accent)
                             }
                         }
                     }

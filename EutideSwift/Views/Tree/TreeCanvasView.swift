@@ -111,7 +111,7 @@ struct BranchZoneView: View {
             Button { onAddTap() } label: {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 20))
-                    .foregroundColor(.blue.opacity(0.7))
+                    .foregroundColor(EU.accent.opacity(0.7))
             }
             .offset(x: 28, y: 0)
         }

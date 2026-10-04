@@ -19,11 +19,11 @@ struct MoodPickerView: View {
                             .opacity(mood == nil || mood == level ? 1 : 0.35)
                         Text(labels[level])
                             .font(.system(size: 9))
-                            .foregroundColor(mood == level ? .blue : .secondary)
+                            .foregroundColor(mood == level ? EU.accent : .secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
-                    .background(mood == level ? Color.blue.opacity(0.1) : Color.clear)
+                    .background(mood == level ? EU.accent.opacity(0.1) : Color.clear)
                     .cornerRadius(8)
                 }
                 .buttonStyle(.plain)

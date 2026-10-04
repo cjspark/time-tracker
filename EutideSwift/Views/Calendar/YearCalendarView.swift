@@ -12,7 +12,7 @@ struct YearCalendarView: View {
                 HStack {
                     Text(String(year))
                         .font(.system(size: 40, weight: .bold))
-                        .foregroundColor(.red)
+                        .foregroundColor(EU.terracotta)
                     Spacer()
                     // Year navigation
                     HStack(spacing: 4) {
@@ -95,7 +95,7 @@ struct MiniMonthView: View {
                             .font(.system(size: 8, weight: isToday ? .bold : .regular))
                             .foregroundColor(isToday ? .white : dayColor(date))
                             .frame(width: 14, height: 14)
-                            .background(isToday ? Color.red : Color.clear)
+                            .background(isToday ? EU.terracotta : Color.clear)
                             .clipShape(Circle())
                             .frame(maxWidth: .infinity)
                     } else {

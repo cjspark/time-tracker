@@ -124,7 +124,7 @@ struct TimeEntrySheet: View {
                                 .font(.system(size: 16))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background(Color(.secondarySystemBackground))
+                                .background(EU.bgCard)
                                 .cornerRadius(12)
                         }
                     }
@@ -161,7 +161,7 @@ private struct CircleButton: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(filled ? .white : .primary)
                 .frame(width: 34, height: 34)
-                .background(filled ? Color.blue : Color(.secondarySystemBackground))
+                .background(filled ? EU.accent : EU.bgCard)
                 .clipShape(Circle())
         }
     }
@@ -174,7 +174,7 @@ private struct CardSection<Content: View>: View {
         content
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(Color(.secondarySystemBackground))
+            .background(EU.bgCard)
             .cornerRadius(12)
     }
 }
@@ -200,7 +200,7 @@ private struct TimeRow: View {
                     .foregroundColor(isExpanded ? .white : .primary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(isExpanded ? Color.blue : Color(.tertiarySystemBackground))
+                    .background(isExpanded ? EU.accent : EU.bgCardAlt)
                     .cornerRadius(8)
                 // Time chip
                 Text(timeStr)
@@ -208,7 +208,7 @@ private struct TimeRow: View {
                     .foregroundColor(isExpanded ? .white : .primary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .background(isExpanded ? Color.blue : Color(.tertiarySystemBackground))
+                    .background(isExpanded ? EU.accent : EU.bgCardAlt)
                     .cornerRadius(8)
             }
             .contentShape(Rectangle())

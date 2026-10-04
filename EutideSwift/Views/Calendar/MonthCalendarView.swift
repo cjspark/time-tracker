@@ -92,7 +92,7 @@ struct MonthCalendarView: View {
                 } label: {
                     Text("今")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.blue)
+                        .foregroundColor(EU.accent)
                 }
             }
         }
@@ -140,7 +140,7 @@ private struct MonthDayCell: View {
                     .font(.system(size: 18, weight: isToday ? .bold : .regular))
                     .foregroundColor(isToday ? .white : (isWeekend ? .secondary : .primary))
                     .frame(width: 34, height: 34)
-                    .background(isToday ? Color.red : Color.clear)
+                    .background(isToday ? EU.terracotta : Color.clear)
                     .clipShape(Circle())
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)

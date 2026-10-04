@@ -159,7 +159,7 @@ private struct DividendForm: View {
                 Spacer()
                 Text(String(format: "%@ %.2f", currency == "CNY" ? "¥" : "$", calculatedTarget))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(calculatedTarget > 0 ? .green : .secondary)
+                    .foregroundColor(calculatedTarget > 0 ? EU.accent : .secondary)
             }
         }
 
@@ -235,7 +235,7 @@ private struct DepositForm: View {
                 Spacer()
                 Text(String(format: "%@ %.2f", currency == "CNY" ? "¥" : "$", calculatedInterest))
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(calculatedInterest > 0 ? .green : .secondary)
+                    .foregroundColor(calculatedInterest > 0 ? EU.accent : .secondary)
             }
         }
 

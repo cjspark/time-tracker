@@ -96,7 +96,7 @@ struct HobbyEditSheet: View {
                             onSetActive()
                             dismiss()
                         }
-                        .foregroundColor(.green)
+                        .foregroundColor(EU.accent)
                     } else {
                         Button("封存此活动") {
                             onSetInactive()

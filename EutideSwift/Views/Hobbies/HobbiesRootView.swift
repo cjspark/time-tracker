@@ -51,12 +51,12 @@ struct HobbiesRootView: View {
                                         .foregroundColor(.secondary)
                                     Text(day.dayNumber)
                                         .font(.system(size: 11, weight: day.isToday ? .bold : .regular))
-                                        .foregroundColor(day.isToday ? .blue : .primary)
+                                        .foregroundColor(day.isToday ? EU.accent : .primary)
                                 }
                                 .frame(maxWidth: .infinity)
                             }
                         }
-                        .listRowBackground(Color(.secondarySystemBackground))
+                        .listRowBackground(EU.bgCard)
 
                         if habits.isEmpty {
                             HStack {
@@ -75,7 +75,7 @@ struct HobbiesRootView: View {
                         } label: {
                             Label("添加习惯", systemImage: "plus.circle")
                                 .font(.system(size: 13))
-                                .foregroundColor(.blue)
+                                .foregroundColor(EU.accent)
                         }
                     }
                 } header: {

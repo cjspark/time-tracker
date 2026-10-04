@@ -100,7 +100,7 @@ struct HobbyDetailCard: View {
                 .font(.caption).foregroundColor(.secondary)
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(EU.bgCard)
         .cornerRadius(12)
     }
 }

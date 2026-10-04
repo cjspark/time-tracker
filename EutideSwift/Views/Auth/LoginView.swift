@@ -22,7 +22,7 @@ struct LoginView: View {
 
             // Logo / title
             VStack(spacing: 8) {
-                Text("Annuli")
+                Text("Eutide")
                     .font(.system(size: 36, weight: .bold, design: .rounded))
                 Text("记录你的每一刻")
                     .font(.system(size: 15))
@@ -38,7 +38,7 @@ struct LoginView: View {
                     .autocorrectionDisabled()
                     .focused($focusedField, equals: .email)
                     .padding(14)
-                    .background(Color(.secondarySystemBackground))
+                    .background(EU.bgCard)
                     .cornerRadius(10)
 
                 // Password field with eye toggle
@@ -62,7 +62,7 @@ struct LoginView: View {
                     }
                 }
                 .padding(14)
-                .background(Color(.secondarySystemBackground))
+                .background(EU.bgCard)
                 .cornerRadius(10)
 
                 // 忘记密码（仅登录模式显示）
@@ -75,7 +75,7 @@ struct LoginView: View {
                             showForgotSheet = true
                         }
                         .font(.system(size: 13))
-                        .foregroundColor(.blue)
+                        .foregroundColor(EU.accent)
                     }
                 }
 
@@ -101,7 +101,7 @@ struct LoginView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(14)
-                        .background(Color.blue)
+                        .background(EU.accent)
                         .cornerRadius(10)
                 }
                 .disabled(email.isEmpty || password.isEmpty)
@@ -111,13 +111,13 @@ struct LoginView: View {
                     auth.errorMessage = nil
                 }
                 .font(.system(size: 14))
-                .foregroundColor(.blue)
+                .foregroundColor(EU.accent)
             }
             .padding(.horizontal, 28)
 
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(EU.bgPage)
         .sheet(isPresented: $showForgotSheet) {
             ForgotPasswordSheet(
                 email: $resetEmail,
@@ -152,7 +152,7 @@ private struct ForgotPasswordSheet: View {
                 VStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 40))
-                        .foregroundColor(.green)
+                        .foregroundColor(EU.accent)
                     Text("重置邮件已发送")
                         .font(.system(size: 16, weight: .medium))
                     Text("请检查 \(email) 的收件箱")
@@ -162,7 +162,7 @@ private struct ForgotPasswordSheet: View {
                 }
                 Button("关闭") { dismiss() }
                     .font(.system(size: 15))
-                    .foregroundColor(.blue)
+                    .foregroundColor(EU.accent)
                     .padding(.top, 4)
             } else {
                 Text("输入账号邮箱，我们将发送重置链接")
@@ -176,7 +176,7 @@ private struct ForgotPasswordSheet: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .padding(14)
-                    .background(Color(.secondarySystemBackground))
+                    .background(EU.bgCard)
                     .cornerRadius(10)
                     .padding(.horizontal, 24)
 
@@ -195,7 +195,7 @@ private struct ForgotPasswordSheet: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(13)
-                    .background(email.isEmpty ? Color.blue.opacity(0.4) : Color.blue)
+                    .background(email.isEmpty ? EU.accent.opacity(0.4) : EU.accent)
                     .cornerRadius(10)
                 }
                 .disabled(email.isEmpty || isLoading)
