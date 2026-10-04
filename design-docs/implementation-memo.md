@@ -2,7 +2,7 @@
 
 > 这份文件记录**视觉层讨论中产生、但尚未落地到代码**的改动。
 > 边讨论边更新。确认要做时，再从这里取出逐项实现。
-> 关联：[annuli-design.md](./annuli-design.md)
+> 关联：[eutide-design.md](./eutide-design.md)
 
 ---
 
@@ -43,7 +43,7 @@
   - 透明度 alpha ≈ 0.82
   - 玻璃外壳：iOS 26+ 用原生 `.glassEffect()`；更老系统手搓渐变+模糊
 
-- [ ] **Design tokens 固化**（annuli-design.md 第十五节全局改造清单）
+- [ ] **Design tokens 固化**（eutide-design.md 第十五节全局改造清单）
   - 背景 #F3F1EA、强调橄榄绿 #7A9B6E、四效率莫兰迪色、陶土红 #BC6A5A
   - 情绪五色、奖励层级四色
   - 圆角 16/12px、显示字体 Baloo 2/Quicksand、文字色三档
@@ -75,6 +75,20 @@
   - 周/月/季/年报告，含每个活动的情绪+用时+note
   - 格式：Markdown（优先，直接喂 Claude）、CSV、PDF
   - 入口：复盘页导出按钮 → 选周期 → 选格式 → 系统分享表单
+
+---
+
+## E. 工程重命名（Mac 侧 · 延后）
+
+品牌已更名 Annuli → **Eutide**。仓库侧已全部改好（源码文件夹 `EutideSwift/`、同步脚本读取路径、设计包、文档）。剩下只在 Mac 本地 Xcode 工程里的"内部名"仍是 Annuli，可延后：
+
+- [ ] Xcode 工程文件夹 `Annuli/` → `Eutide/`、`Annuli.xcodeproj` → `Eutide.xcodeproj`
+- [ ] target / scheme / bundle id（`com.cjspark.annuli` → `.eutide`；本 app 未上架，改 bundle 无代价）
+- [ ] `@main struct AnnuliApp`（`AnnuliApp.swift` → `EutideApp.swift`）、`Date+Annuli.swift` 等代码标识符
+- [ ] 同步改 `sync-xcode.sh` 的 `XCODE_SRC`/`XCODE_PROJ` 与 `add-to-xcode.rb` 第 67 行 group 名 `'Annuli'` → `'Eutide'`
+- [ ] App 显示名设为 Eutide（target → General → Display Name，这步最简单，可单独先做）
+
+> 顺序：先在 Mac/Xcode 改工程名，再同步改上面两个脚本里的 `Annuli`，否则 `bash sync-xcode.sh` 会找不到工程而报错。
 
 ---
 

@@ -5,7 +5,7 @@
 set -e
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SWIFT_SRC="$REPO/AnnuliSwift"
+SWIFT_SRC="$REPO/EutideSwift"
 XCODE_SRC="$REPO/Annuli"
 XCODE_PROJ="$REPO/Annuli/Annuli.xcodeproj"
 

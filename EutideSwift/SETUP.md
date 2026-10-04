@@ -1,4 +1,6 @@
-# Annuli — 原生 SwiftUI 版本
+# Eutide — 原生 SwiftUI 版本
+
+> 品牌已更名为 **Eutide**（原 Annuli）。Mac 上的 Xcode 工程内部名暂仍为 `Annuli`（target / bundle / `AnnuliApp.swift`），属可延后的工程重命名；源码文件夹已更名为 `EutideSwift/`。
 
 ## 在 Mac 上设置 Xcode 项目（5步）
 
@@ -23,7 +25,7 @@
 
 ### 第 3 步：导入源文件
 
-1. 在 Finder 中找到本项目的 `AnnuliSwift/` 文件夹
+1. 在 Finder 中找到本项目的 `EutideSwift/` 文件夹
 2. **全选**所有子文件夹（Config, Models, Services, Domain, Extensions, ViewModels, Views）
 3. 拖进 Xcode 的 project navigator（左侧文件树）
 4. 弹出对话框：勾选 **Copy items if needed** + **Create groups** → Finish

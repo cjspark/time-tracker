@@ -1,0 +1,80 @@
+/* ============================================================
+   Eutide Design System — Tokens
+   EU 系列 · 时间管理 · 莫兰迪低饱和大地色系 · 仅浅色
+   所有组件只引用这些变量，不写死色值。
+   ============================================================ */
+
+:root {
+  /* ---- 中性色：背景 / 卡片 / 文字（暖米，非纯灰）---- */
+  --eu-bg-page:      #F3F1EA;   /* 页面背景 */
+  --eu-bg-card:      #FBFAF6;   /* 卡片 */
+  --eu-bg-card-alt:  #EDEAE0;   /* 次级卡片 / 输入框 */
+  --eu-border-soft:  #E0DCD0;   /* 分割线 / 边框 */
+  --eu-text-primary: #3D3A32;   /* 主文字 */
+  --eu-text-muted:   #7A756A;   /* 次要文字 */
+  --eu-text-faint:   #ABA599;   /* 占位 / 最弱 */
+
+  /* ---- 主强调（橄榄绿 = 生长）---- */
+  --eu-accent:       #7A9B6E;
+  --eu-accent-deep:  #6A8A5E;   /* 按下态 */
+
+  /* ---- 四类效率（按驱动力）---- */
+  --eu-eff-productive: #8A7BA8;  /* 生产：为了完成（雾紫）*/
+  --eu-eff-creative:   #C08A5E;  /* 创造：为了成长（赭石）*/
+  --eu-eff-enjoyable:  #7A9B6E;  /* 娱乐：为了放松（橄榄绿，同主强调）*/
+  --eu-eff-daily:      #7D93A8;  /* 日常：为了生活（雾蓝）*/
+  --eu-eff-untracked:  #D2CEC4;  /* 未追踪 / 没标心情（浅灰米）*/
+
+  /* ---- 情绪五色（独立于效率；低落/压力非警告色）---- */
+  --eu-mood-joyful:  #A8BF94;   /* 😊 愉悦 */
+  --eu-mood-calm:    #94ADBF;   /* 😌 平静 */
+  --eu-mood-neutral: #BFB894;   /* 😐 还行 */
+  --eu-mood-low:     #B09BA8;   /* 😔 低落 */
+  --eu-mood-stress:  #BF9A8A;   /* 😤 压力 */
+
+  /* ---- 奖励四级 ---- */
+  --eu-reward-small:  #34C759;  /* 🌱 小确幸 */
+  --eu-reward-medium: #007AFF;  /* 🌟 好好犒劳 */
+  --eu-reward-large:  #AF52DE;  /* 🎯 认真奖励 */
+  --eu-reward-xlarge: #FF9F0A;  /* 🏆 里程碑 */
+
+  /* ---- 签名色 ---- */
+  --eu-terracotta:   #BC6A5A;   /* 陶土红：当前时间线 / 完成果实（替代刺眼正红）*/
+
+  /* ---- 圆角 ---- */
+  --eu-radius-card: 16px;
+  --eu-radius-ctl:  12px;       /* 按钮 / 输入框 / 小组件 */
+  --eu-radius-sm:   8px;
+
+  /* ---- 间距 ---- */
+  --eu-pad-page: 16px;
+  --eu-pad-card: 16px;
+  --eu-gap-card: 12px;
+
+  /* ---- 字体 ---- */
+  --eu-font-display: "Baloo 2", "Quicksand", "PingFang SC", -apple-system, sans-serif; /* 标题 / 数字 */
+  --eu-font-body:    "PingFang SC", -apple-system, system-ui, sans-serif;              /* 正文 / 数据 */
+  --eu-fs-title:      18px;
+  --eu-fs-card-title: 15px;
+  --eu-fs-body:       14px;
+  --eu-fs-aux:        12px;
+
+  /* ---- 阴影 ---- */
+  --eu-shadow-card:  0 2px 8px rgba(120,110,90,.07);
+  --eu-shadow-float: 0 14px 32px rgba(120,100,70,.22);
+
+  /* ---- 动效（spring，禁线性）---- */
+  --eu-ease-spring:  cubic-bezier(.4, 1.1, .5, 1);
+  --eu-dur-std:       .3s;      /* 标准操作 */
+  --eu-dur-page:      .45s;     /* 页面过渡 */
+  --eu-dur-celebrate: .7s;      /* 庆祝 / 奖励兑换 */
+
+  /* ---- MoodBlend 色彩引擎参数（见 DESIGN.md）---- */
+  --eu-moodblend-chroma:    3.2;
+  --eu-moodblend-dominance: 3.5;
+
+  /* ---- 液体渲染参数（水晶球）---- */
+  --eu-liquid-depth: .55;
+  --eu-liquid-alpha: .82;
+  --eu-liquid-wave:  .5;
+}

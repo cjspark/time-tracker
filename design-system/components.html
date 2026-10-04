@@ -1,0 +1,119 @@
+<!-- @dsCard group="Eutide" -->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eutide · Components</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--eu-bg-page);color:var(--eu-text-primary);
+    font-family:var(--eu-font-body);padding:28px 20px 70px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:560px;margin:0 auto}
+  h1{font-family:var(--eu-font-display);font-size:22px;margin-bottom:4px}
+  .sub{color:var(--eu-text-muted);font-size:var(--eu-fs-aux);margin-bottom:26px}
+  section{background:var(--eu-bg-card);border-radius:var(--eu-radius-card);
+    padding:var(--eu-pad-card);margin-bottom:16px;box-shadow:var(--eu-shadow-card)}
+  .lbl{font-size:10px;font-weight:600;letter-spacing:.5px;color:var(--eu-text-faint);
+    text-transform:uppercase;margin-bottom:12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+  /* buttons */
+  .btn{border:none;border-radius:var(--eu-radius-ctl);padding:10px 18px;font-size:var(--eu-fs-body);
+    font-family:inherit;cursor:pointer;transition:var(--eu-dur-std) var(--eu-ease-spring)}
+  .btn-primary{background:var(--eu-accent);color:#fff}
+  .btn-primary:active{background:var(--eu-accent-deep)}
+  .btn-ghost{background:var(--eu-bg-card-alt);color:var(--eu-text-primary)}
+
+  /* chips: efficiency */
+  .chip{display:inline-flex;align-items:center;gap:7px;border-radius:var(--eu-radius-ctl);
+    padding:8px 13px;font-size:var(--eu-fs-body);background:var(--eu-bg-card-alt)}
+  .chip .dot{width:11px;height:11px;border-radius:50%}
+
+  /* mood (tagging only) */
+  .mood{text-align:center;padding:10px 8px;border-radius:var(--eu-radius-ctl);background:var(--eu-bg-card-alt);min-width:60px}
+  .mood .emo{font-size:24px}
+  .mood .nm{font-size:11px;color:var(--eu-text-muted);margin-top:5px}
+
+  /* reward badges */
+  .badge{display:inline-flex;align-items:center;gap:6px;border-radius:var(--eu-radius-sm);
+    padding:5px 10px;font-size:var(--eu-fs-aux);font-weight:600;color:#fff}
+
+  /* mood stacked bar */
+  .bar{display:flex;height:24px;border-radius:var(--eu-radius-sm);overflow:hidden;background:var(--eu-bg-card-alt)}
+  .seg{height:100%}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px}
+  .legend .it{display:flex;align-items:center;gap:5px;font-size:var(--eu-fs-aux);color:var(--eu-text-muted)}
+  .legend .d{width:9px;height:9px;border-radius:50%}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Eutide · 组件目录</h1>
+  <div class="sub">全部引用 tokens.css · 新增组件前先过设计原则</div>
+
+  <section>
+    <div class="lbl">按钮 Button</div>
+    <div class="row">
+      <button class="btn btn-primary">记好了</button>
+      <button class="btn btn-ghost">先不标</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="lbl">效率标签 Efficiency（无 emoji · 最多 2 个）</div>
+    <div class="row">
+      <span class="chip"><span class="dot" style="background:var(--eu-eff-productive)"></span>生产</span>
+      <span class="chip"><span class="dot" style="background:var(--eu-eff-creative)"></span>创造</span>
+      <span class="chip"><span class="dot" style="background:var(--eu-eff-enjoyable)"></span>娱乐</span>
+      <span class="chip"><span class="dot" style="background:var(--eu-eff-daily)"></span>日常</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="lbl">情绪 Mood（仅记录时出现）</div>
+    <div class="row">
+      <div class="mood" style="background:color-mix(in srgb,var(--eu-mood-joyful) 30%,transparent)"><div class="emo">😊</div><div class="nm">愉悦</div></div>
+      <div class="mood" style="background:color-mix(in srgb,var(--eu-mood-calm) 30%,transparent)"><div class="emo">😌</div><div class="nm">平静</div></div>
+      <div class="mood"><div class="emo">😐</div><div class="nm">还行</div></div>
+      <div class="mood"><div class="emo">😔</div><div class="nm">低落</div></div>
+      <div class="mood"><div class="emo">😤</div><div class="nm">压力</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="lbl">奖励徽章 Reward Tier</div>
+    <div class="row">
+      <span class="badge" style="background:var(--eu-reward-small)">🌱 小确幸</span>
+      <span class="badge" style="background:var(--eu-reward-medium)">🌟 好好犒劳</span>
+      <span class="badge" style="background:var(--eu-reward-large)">🎯 认真奖励</span>
+      <span class="badge" style="background:var(--eu-reward-xlarge)">🏆 里程碑</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="lbl">情绪堆叠条 Mood Bar（复盘近景 · 无 emoji）</div>
+    <div class="bar">
+      <div class="seg" style="flex:1.5;background:var(--eu-mood-joyful)"></div>
+      <div class="seg" style="flex:1.5;background:var(--eu-mood-calm)"></div>
+      <div class="seg" style="flex:3;background:var(--eu-mood-neutral)"></div>
+      <div class="seg" style="flex:3;background:var(--eu-mood-stress)"></div>
+      <div class="seg" style="flex:1;background:var(--eu-eff-untracked)"></div>
+    </div>
+    <div class="legend">
+      <span class="it"><span class="d" style="background:var(--eu-mood-joyful)"></span>愉悦</span>
+      <span class="it"><span class="d" style="background:var(--eu-mood-calm)"></span>平静</span>
+      <span class="it"><span class="d" style="background:var(--eu-mood-neutral)"></span>还行</span>
+      <span class="it"><span class="d" style="background:var(--eu-mood-stress)"></span>压力</span>
+      <span class="it"><span class="d" style="background:var(--eu-eff-untracked)"></span>没标心情</span>
+    </div>
+  </section>
+
+  <section>
+    <div class="lbl">签名组件 Signature（独立原型）</div>
+    <div class="sub" style="margin:0">· 情绪水晶球 → crystal-ball-v4.html<br>· 液体 / 玻璃质感 → liquid-lab.html / glass-lab.html<br>· MoodBlend 色彩引擎 → liquid-lab.html 的 blend()</div>
+  </section>
+</div>
+</body>
+</html>

@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # scripts/add-to-xcode.rb
-# 把 AnnuliSwift/ 里新增的 Swift 文件自动加入 Xcode 项目（防重复）
+# 把 EutideSwift/ 里新增的 Swift 文件自动加入 Xcode 项目（防重复）
+# 注意：下方 group 名 'Annuli' 对应 Mac 上 Xcode 工程的内部名；若将来在 Xcode 里把工程改名为 Eutide，这里也要同步改。
 
 begin
   require 'xcodeproj'
