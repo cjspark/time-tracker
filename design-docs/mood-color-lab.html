@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annuli · 情绪色彩实验室</title>
+<style>
+  :root{
+    --bg-page:#F3F1EA; --bg-card:#FBFAF6; --bg-card-alt:#EDEAE0;
+    --border-soft:#E0DCD0; --text-primary:#3D3A32; --text-muted:#7A756A;
+    --text-faint:#ABA599; --accent:#7A9B6E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg-page);color:var(--text-primary);
+    font-family:-apple-system,"PingFang SC","Quicksand",sans-serif;
+    line-height:1.5;padding:28px 18px 80px;-webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+  h1{font-size:22px;font-weight:600;margin-bottom:6px}
+  .sub{color:var(--text-muted);font-size:13px;margin-bottom:28px}
+  section{background:var(--bg-card);border-radius:16px;padding:20px;margin-bottom:18px;
+    box-shadow:0 1px 3px rgba(120,110,90,.06)}
+  h2{font-size:15px;font-weight:600;margin-bottom:4px}
+  .hint{font-size:12px;color:var(--text-faint);margin-bottom:16px}
+
+  /* base swatches */
+  .bases{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .base{text-align:center}
+  .chip{width:100%;aspect-ratio:1;border-radius:14px;margin-bottom:6px;
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
+  .base .emo{font-size:20px}
+  .base .nm{font-size:12px;font-weight:600}
+  .base .code{font-size:9px;color:var(--text-faint);font-family:monospace}
+
+  /* matrix */
+  .matrix{display:grid;grid-template-columns:auto repeat(5,1fr);gap:4px;align-items:center}
+  .mlabel{font-size:16px;text-align:center}
+  .mcell{aspect-ratio:1;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.03)}
+
+  /* scenes */
+  .scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .scene{text-align:center}
+  .drop{width:100%;aspect-ratio:1;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+    margin-bottom:8px;position:relative;overflow:hidden;
+    box-shadow:inset 0 -8px 18px rgba(0,0,0,.06),inset 0 4px 10px rgba(255,255,255,.4)}
+  .scene .title{font-size:12px;font-weight:600}
+  .scene .dist{font-size:10px;color:var(--text-muted);margin-top:2px}
+
+  /* mixer */
+  .mixer{display:grid;grid-template-columns:1fr 150px;gap:22px;align-items:center}
+  @media(max-width:560px){.mixer{grid-template-columns:1fr}}
+  .sliders .row{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .sliders .row .lbl{width:74px;font-size:12px;display:flex;align-items:center;gap:5px}
+  .sliders .row .dot{width:11px;height:11px;border-radius:50%}
+  .sliders input[type=range]{flex:1;accent-color:var(--accent);height:4px}
+  .sliders .val{width:30px;text-align:right;font-size:11px;color:var(--text-muted);font-family:monospace}
+  .result{text-align:center}
+  .result .big{width:120px;height:120px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;
+    margin:0 auto 10px;box-shadow:inset 0 -10px 22px rgba(0,0,0,.07),inset 0 5px 12px rgba(255,255,255,.45)}
+  .result .oklch{font-size:10px;color:var(--text-faint);font-family:monospace}
+  .soothe{margin-top:16px;padding-top:14px;border-top:1px solid var(--border-soft)}
+  .soothe .row{display:flex;align-items:center;gap:10px}
+  .soothe .lbl{width:74px;font-size:12px}
+
+  /* gradient compare */
+  .grad{height:46px;border-radius:11px;margin:6px 0 3px}
+  .glabel{font-size:11px;color:var(--text-muted);display:flex;justify-content:space-between}
+  .tag{font-size:10px;font-weight:600;color:var(--text-faint);margin-top:12px}
+  .tag.good{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>情绪色彩实验室</h1>
+  <div class="sub">用 OKLCH 感知色彩空间按比例混合 · 验证不出泥色 · 保持莫兰迪舒缓调性</div>
+
+  <section>
+    <h2>五种情绪基色</h2>
+    <div class="hint">水晶球每块水的颜色，从这五个基准点按时间比例混出</div>
+    <div class="bases" id="bases"></div>
+  </section>
+
+  <section>
+    <h2>两两 50/50 混合矩阵</h2>
+    <div class="hint">重点看对角以外——绿×赭红、蓝×黄 等对冲色是否变浑。OKLCH 里它们自然走向柔和灰调，而非棕泥</div>
+    <div class="matrix" id="matrix"></div>
+  </section>
+
+  <section>
+    <h2>真实场景水色</h2>
+    <div class="hint">模拟三个活动类别的情绪分布，各自融合成一滴"液体"</div>
+    <div class="scenes" id="scenes"></div>
+  </section>
+
+  <section>
+    <h2>实时调色台</h2>
+    <div class="hint">拖动各情绪的时间占比，实时看混出的水色。「舒缓强度」压低彩度——混得越杂越该往宁静走</div>
+    <div class="mixer">
+      <div class="sliders" id="sliders"></div>
+      <div class="result">
+        <div class="big" id="bigDrop"></div>
+        <div class="oklch" id="bigCode"></div>
+      </div>
+    </div>
+    <div class="soothe">
+      <div class="row">
+        <span class="lbl">舒缓强度</span>
+        <input type="range" id="soothe" min="0.55" max="1" step="0.01" value="0.85" style="flex:1;accent-color:var(--accent)">
+        <span class="val" id="sootheVal">0.85</span>
+      </div>
+      <div class="row" style="margin-top:11px">
+        <span class="lbl">透明度</span>
+        <input type="range" id="alpha" min="0.35" max="1" step="0.01" value="0.68" style="flex:1;accent-color:var(--accent)">
+        <span class="val" id="alphaVal">0.68</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>OKLCH vs 朴素 RGB 渐变</h2>
+    <div class="hint">同样从愉悦(绿)过渡到压力(赭红)。上面用 OKLCH，下面用 RGB 直接插值——看中段谁更干净</div>
+    <div class="tag good">OKLCH 感知插值</div>
+    <div class="grad" id="gradOK"></div>
+    <div class="tag">朴素 RGB 插值（易出泥色）</div>
+    <div class="grad" id="gradRGB"></div>
+    <div class="glabel"><span>😊 愉悦</span><span>😤 压力</span></div>
+  </section>
+</div>
+
+<script>
+/* ---------- OKLab / OKLCH color engine ---------- */
+function srgbToLin(c){c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4)}
+function linToSrgb(c){const v=c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055;return Math.round(Math.min(1,Math.max(0,v))*255)}
+function hexToRgb(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgbToOklab(r,g,b){
+  r=srgbToLin(r);g=srgbToLin(g);b=srgbToLin(b);
+  const l=0.4122214708*r+0.5363325363*g+0.0514459929*b;
+  const m=0.2119034982*r+0.6806995451*g+0.1073969566*b;
+  const s=0.0883024619*r+0.2817188376*g+0.6299787005*b;
+  const l_=Math.cbrt(l),m_=Math.cbrt(m),s_=Math.cbrt(s);
+  return[
+    0.2104542553*l_+0.7936177850*m_-0.0040720468*s_,
+    1.9779984951*l_-2.4285922050*m_+0.4505937099*s_,
+    0.0259040371*l_+0.7827717662*m_-0.8086757660*s_
+  ];
+}
+function oklabToRgb(L,a,b){
+  const l_=L+0.3963377774*a+0.2158037573*b;
+  const m_=L-0.1055613458*a-0.0638541728*b;
+  const s_=L-0.0894841775*a-1.2914855480*b;
+  const l=l_**3,m=m_**3,s=s_**3;
+  return[
+    linToSrgb(+4.0767416621*l-3.3077115913*m+0.2309699292*s),
+    linToSrgb(-1.2684380046*l+2.6097574011*m-0.3413193965*s),
+    linToSrgb(-0.0041960863*l-0.7034186147*m+1.7076147010*s)
+  ];
+}
+function oklabToLch(L,a,b){return[L,Math.hypot(a,b),(Math.atan2(b,a)*180/Math.PI+360)%360]}
+
+/* blend N colors (each {oklab:[L,a,b]}) by weights, in OKLab (handles hue as vector). */
+function blend(items,weights,soothe=1){
+  const tot=weights.reduce((s,w)=>s+w,0);
+  if(tot<=0)return[237,234,224]; // untracked-ish neutral
+  let L=0,a=0,b=0;
+  items.forEach((it,i)=>{const w=weights[i]/tot;L+=w*it.oklab[0];a+=w*it.oklab[1];b+=w*it.oklab[2];});
+  a*=soothe;b*=soothe; // lower chroma = calmer
+  return oklabToRgb(L,a,b);
+}
+const css=rgb=>`rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+const cssa=(rgb,a)=>`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${a})`;
+
+/* ---------- emotion base data ---------- */
+const EMO=[
+  {emo:'😊',nm:'愉悦',hex:'#A8BF94'},
+  {emo:'😌',nm:'平静',hex:'#94ADBF'},
+  {emo:'😐',nm:'还行',hex:'#BFB894'},
+  {emo:'😔',nm:'低落',hex:'#B09BA8'},
+  {emo:'😤',nm:'压力',hex:'#BF9A8A'},
+];
+EMO.forEach(e=>{const rgb=hexToRgb(e.hex);e.rgb=rgb;e.oklab=rgbToOklab(...rgb);e.lch=oklabToLch(...e.oklab);});
+
+/* ---------- render bases ---------- */
+document.getElementById('bases').innerHTML=EMO.map(e=>{
+  const[L,C,H]=e.lch;
+  return `<div class="base">
+    <div class="chip" style="background:${e.hex}"></div>
+    <div class="emo">${e.emo}</div><div class="nm">${e.nm}</div>
+    <div class="code">L${(L*100).toFixed(0)} C${C.toFixed(2)} H${H.toFixed(0)}</div>
+  </div>`;
+}).join('');
+
+/* ---------- matrix ---------- */
+let mx='<div></div>'+EMO.map(e=>`<div class="mlabel">${e.emo}</div>`).join('');
+EMO.forEach((row,i)=>{
+  mx+=`<div class="mlabel">${row.emo}</div>`;
+  EMO.forEach((col,j)=>{
+    const c=blend([row,col],[1,1],1);
+    mx+=`<div class="mcell" style="background:${css(c)}"></div>`;
+  });
+});
+document.getElementById('matrix').innerHTML=mx;
+
+/* ---------- scenes ---------- */
+const SC=[
+  {title:'创造性',dist:{0:5,1:2,2:1}},        // 愉悦多
+  {title:'生产性',dist:{0:2,1:2,4:4,2:1}},    // 压力偏多
+  {title:'日常性',dist:{1:4,2:3,3:1}},        // 平静为主
+];
+function renderScenes(){
+  const soothe=+document.getElementById('soothe').value;
+  const alpha=+document.getElementById('alpha').value;
+  document.getElementById('scenes').innerHTML=SC.map(s=>{
+    const w=EMO.map((_,i)=>s.dist[i]||0);
+    const c=blend(EMO,w,soothe);
+    const total=w.reduce((a,b)=>a+b,0);
+    const parts=EMO.map((e,i)=>w[i]?`${e.emo}${Math.round(w[i]/total*100)}%`:'').filter(Boolean).join(' ');
+    return `<div class="scene">
+      <div class="drop" style="background:${cssa(c,alpha)}"></div>
+      <div class="title">${s.title}</div><div class="dist">${parts}</div>
+    </div>`;
+  }).join('');
+}
+renderScenes();
+
+/* ---------- mixer ---------- */
+const init=[50,20,10,5,30];
+document.getElementById('sliders').innerHTML=EMO.map((e,i)=>`
+  <div class="row">
+    <span class="lbl"><span class="dot" style="background:${e.hex}"></span>${e.emo}${e.nm}</span>
+    <input type="range" min="0" max="100" value="${init[i]}" data-i="${i}">
+    <span class="val" id="v${i}">${init[i]}</span>
+  </div>`).join('');
+
+function updateMix(){
+  const w=EMO.map((_,i)=>+document.querySelector(`input[data-i="${i}"]`).value);
+  w.forEach((v,i)=>document.getElementById('v'+i).textContent=v);
+  const soothe=+document.getElementById('soothe').value;
+  const alpha=+document.getElementById('alpha').value;
+  document.getElementById('sootheVal').textContent=soothe.toFixed(2);
+  document.getElementById('alphaVal').textContent=alpha.toFixed(2);
+  const c=blend(EMO,w,soothe);
+  document.getElementById('bigDrop').style.background=cssa(c,alpha);
+  const lch=oklabToLch(...rgbToOklab(...c));
+  document.getElementById('bigCode').textContent=`oklch(${(lch[0]*100).toFixed(1)}% ${lch[1].toFixed(3)} ${lch[2].toFixed(0)}) · α${alpha.toFixed(2)}`;
+}
+document.querySelectorAll('#sliders input,#soothe,#alpha').forEach(el=>el.addEventListener('input',()=>{updateMix();renderScenes();}));
+updateMix();
+
+/* ---------- gradient compare ---------- */
+const A=EMO[0],B=EMO[4],N=24;
+let okStops=[],rgbStops=[];
+for(let i=0;i<=N;i++){
+  const t=i/N;
+  okStops.push(css(blend([A,B],[1-t,t],1)));
+  rgbStops.push(`rgb(${Math.round(A.rgb[0]*(1-t)+B.rgb[0]*t)},${Math.round(A.rgb[1]*(1-t)+B.rgb[1]*t)},${Math.round(A.rgb[2]*(1-t)+B.rgb[2]*t)})`);
+}
+document.getElementById('gradOK').style.background=`linear-gradient(90deg,${okStops.join(',')})`;
+document.getElementById('gradRGB').style.background=`linear-gradient(90deg,${rgbStops.join(',')})`;
+</script>
+</body>
+</html>
