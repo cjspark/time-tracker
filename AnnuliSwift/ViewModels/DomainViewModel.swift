@@ -81,6 +81,11 @@ class DomainViewModel: ObservableObject {
         outputs.removeAll { $0.id == output.id }
     }
 
+    func toggleComplete(_ output: DomainOutput) async throws {
+        let updated = try await OutputService.setCompleted(id: output.id, completed: !output.isCompleted)
+        if let i = outputs.firstIndex(where: { $0.id == output.id }) { outputs[i] = updated }
+    }
+
     func outputs(for domainId: UUID) -> [DomainOutput] {
         outputs.filter { $0.domainId == domainId }.sorted { $0.date > $1.date }
     }

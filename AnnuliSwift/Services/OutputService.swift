@@ -31,31 +31,67 @@ struct OutputService {
 
         if let existingId = id {
             struct Update: Encodable {
-                let title, date: String; let count: Int?; let notes: String?
-                enum CodingKeys: String, CodingKey { case title, date, count, notes }
+                let title, date: String
+                let count: Int?
+                let notes: String?
+                let rewardTier: String?
+                enum CodingKeys: String, CodingKey {
+                    case title, date, count, notes
+                    case rewardTier = "reward_tier"
+                }
             }
-            let u = Update(title: form.title, date: form.date, count: form.count,
-                           notes: form.notes.isEmpty ? nil : form.notes)
+            let u = Update(
+                title: form.title, date: form.date,
+                count: form.count,
+                notes: form.notes.isEmpty ? nil : form.notes,
+                rewardTier: form.rewardTier?.rawValue
+            )
             let updated: [DomainOutput] = try await supabase
                 .from("outputs").update(u).eq("id", value: existingId).select().execute().value
             return updated[0]
         } else {
             struct Insert: Encodable {
                 let userId: UUID; let domainId: UUID
-                let title, date: String; let count: Int?; let notes: String?
+                let title, date: String
+                let count: Int?
+                let notes: String?
+                let rewardTier: String?
                 enum CodingKeys: String, CodingKey {
                     case title, date, count, notes
-                    case userId   = "user_id"
-                    case domainId = "domain_id"
+                    case userId     = "user_id"
+                    case domainId   = "domain_id"
+                    case rewardTier = "reward_tier"
                 }
             }
-            let i = Insert(userId: userId, domainId: form.domainId, title: form.title,
-                           date: form.date, count: form.count,
-                           notes: form.notes.isEmpty ? nil : form.notes)
+            let i = Insert(
+                userId: userId, domainId: form.domainId,
+                title: form.title, date: form.date,
+                count: form.count,
+                notes: form.notes.isEmpty ? nil : form.notes,
+                rewardTier: form.rewardTier?.rawValue
+            )
             let created: [DomainOutput] = try await supabase
                 .from("outputs").insert(i).select().execute().value
             return created[0]
         }
+    }
+
+    static func setCompleted(id: UUID, completed: Bool) async throws -> DomainOutput {
+        struct Patch: Encodable {
+            let isCompleted: Bool
+            let completedAt: String?
+            enum CodingKeys: String, CodingKey {
+                case isCompleted = "is_completed"
+                case completedAt = "completed_at"
+            }
+        }
+        let patch = Patch(
+            isCompleted: completed,
+            completedAt: completed ? Date().localDateString() : nil
+        )
+        let updated: [DomainOutput] = try await supabase
+            .from("outputs").update(patch).eq("id", value: id).select().execute().value
+        return updated[0]
     }
 
     static func delete(id: UUID) async throws {
