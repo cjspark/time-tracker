@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eutide · 奖励模块</title>
+<style>
+  :root{
+    --bg-page:#F3F1EA; --bg-card:#FBFAF6; --bg-card-alt:#EDEAE0;
+    --border-soft:#E0DCD0; --text-primary:#3D3A32; --text-muted:#7A756A;
+    --text-faint:#ABA599; --accent:#7A9B6E;
+    /* 奖励四级（莫兰迪压过，彼此区分，不撞效率/情绪色）*/
+    --r-small:#7AA88C; --r-medium:#7B9CC4; --r-large:#A88BB6; --r-xlarge:#D2A85A;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg-page);color:var(--text-primary);
+    font-family:-apple-system,"PingFang SC","Quicksand",sans-serif;
+    padding:28px 18px 70px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:440px;margin:0 auto}
+  h1{font-size:21px;font-weight:600;margin-bottom:4px}
+  .sub{color:var(--text-muted);font-size:13px;margin-bottom:24px}
+
+  .sec{margin-bottom:26px}
+  .secHead{font-size:15px;font-weight:600;margin-bottom:4px}
+  .secHint{font-size:12px;color:var(--text-faint);margin-bottom:14px}
+
+  /* unredeemed cards */
+  .rwd{background:var(--bg-card);border-radius:14px;padding:0;margin-bottom:11px;overflow:hidden;
+    box-shadow:0 2px 8px rgba(120,110,90,.07);display:flex;align-items:stretch;
+    transition:.5s cubic-bezier(.4,1,.5,1)}
+  .rwd .bar{width:5px;flex-shrink:0}
+  .rwd .body{flex:1;padding:13px 15px;display:flex;align-items:center;gap:10px}
+  .rwd .main{flex:1}
+  .rwd .title{font-size:14px;font-weight:600}
+  .rwd .tier{font-size:11px;font-weight:600;margin-top:3px}
+  .rwd .btn{border:none;border-radius:10px;padding:7px 15px;font-size:13px;font-family:inherit;
+    cursor:pointer;color:#fff;transition:.18s;white-space:nowrap}
+  .rwd.done{opacity:.6}
+  .rwd.done .done-txt{font-size:12px;color:var(--text-muted)}
+  .rwd.celebrate{animation:pop .6s cubic-bezier(.4,1.3,.5,1)}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
+
+  /* redeem picker */
+  .picker{background:var(--bg-card-alt);border-radius:0 0 14px 14px;padding:12px 15px;
+    border-top:1px dashed var(--border-soft)}
+  .picker .ptip{font-size:11px;color:var(--text-muted);margin-bottom:9px}
+  .picker .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .picker .opt{background:var(--bg-card);border:1px solid var(--border-soft);border-radius:9px;
+    padding:7px 12px;font-size:13px;cursor:pointer;transition:.15s}
+  .picker .opt:hover{border-color:var(--accent)}
+
+  /* pool */
+  .pool{background:var(--bg-card);border-radius:14px;padding:15px;box-shadow:0 2px 8px rgba(120,110,90,.07)}
+  .poolTier{margin-bottom:14px}
+  .poolTier:last-child{margin-bottom:0}
+  .poolTier .lab{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .poolTier .lab .d{width:9px;height:9px;border-radius:50%}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{background:var(--bg-card-alt);border-radius:9px;padding:6px 11px;font-size:13px;color:var(--text-primary)}
+  .chip.add{color:var(--text-faint);cursor:pointer;border:1px dashed var(--border-soft);background:transparent}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>奖励</h1>
+  <div class="sub">生命树里勾完的产出目标，来这里兑现对自己的奖励</div>
+
+  <div class="sec">
+    <div class="secHead">未兑换奖励</div>
+    <div class="secHint">完成的目标在这里等你兑现 · 点"兑换"从奖池挑一个</div>
+    <div id="unredeemed"></div>
+  </div>
+
+  <div class="sec">
+    <div class="secHead">奖池</div>
+    <div class="secHint">你给自己准备的奖励，按份量分级</div>
+    <div class="pool" id="pool"></div>
+  </div>
+</div>
+
+<script>
+const TIERS={
+  small:{nm:'小确幸',color:'var(--r-small)'},
+  medium:{nm:'好好犒劳',color:'var(--r-medium)'},
+  large:{nm:'认真奖励',color:'var(--r-large)'},
+  xlarge:{nm:'里程碑',color:'var(--r-xlarge)'},
+};
+let unredeemed=[
+  {id:1,title:'发布英语短视频 2 条',tier:'large',redeemed:null},
+  {id:2,title:'完成 Q3 健身目标',tier:'xlarge',redeemed:null},
+  {id:3,title:'读完《心流》',tier:'small',redeemed:null},
+];
+const pool={
+  small:['一杯奶茶','看部电影','买本书'],
+  medium:['买件衣服','约朋友大餐'],
+  large:['周末短途旅行','买个心仪已久的东西'],
+  xlarge:['出国旅游一次'],
+};
+
+const unredeemedEl=document.getElementById('unredeemed');
+function renderUnredeemed(){
+  unredeemedEl.innerHTML='';
+  unredeemed.forEach(r=>{
+    const t=TIERS[r.tier];
+    const card=document.createElement('div');
+    card.className='rwd'+(r.redeemed?' done':'');
+    card.innerHTML=`
+      <div class="bar" style="background:${t.color}"></div>
+      <div class="body">
+        <div class="main">
+          <div class="title">${r.title}</div>
+          <div class="tier" style="color:${t.color}">${t.nm}</div>
+        </div>
+        ${r.redeemed
+          ? `<div class="done-txt">已兑换 · ${r.redeemed}</div>`
+          : `<button class="btn" style="background:${t.color}" data-id="${r.id}">兑换</button>`}
+      </div>`;
+    unredeemedEl.appendChild(card);
+  });
+  unredeemedEl.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',()=>openPicker(+b.dataset.id,b)));
+}
+
+function openPicker(id,btn){
+  const r=unredeemed.find(x=>x.id===id);const t=TIERS[r.tier];
+  const card=btn.closest('.rwd');
+  if(card.querySelector('.picker'))return;
+  const pk=document.createElement('div');pk.className='picker';
+  pk.innerHTML=`<div class="ptip">从「${t.nm}」奖池里挑一个犒劳自己：</div>
+    <div class="opts">${pool[r.tier].map(o=>`<span class="opt">${o}</span>`).join('')}</div>`;
+  card.appendChild(pk);
+  pk.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+    r.redeemed=o.textContent;renderUnredeemed();
+    // celebrate the just-redeemed card
+    requestAnimationFrame(()=>{
+      const c=[...unredeemedEl.children].find(el=>el.querySelector('.done-txt')&&el.querySelector('.title').textContent===r.title);
+      if(c)c.classList.add('celebrate');
+    });
+  }));
+}
+
+const poolEl=document.getElementById('pool');
+function renderPool(){
+  poolEl.innerHTML=Object.entries(pool).map(([k,items])=>{
+    const t=TIERS[k];
+    return `<div class="poolTier">
+      <div class="lab"><span class="d" style="background:${t.color}"></span>${t.nm}</div>
+      <div class="chips">${items.map(i=>`<span class="chip">${i}</span>`).join('')}<span class="chip add">+ 添加</span></div>
+    </div>`;
+  }).join('');
+}
+renderUnredeemed();renderPool();
+</script>
+</body>
+</html>
