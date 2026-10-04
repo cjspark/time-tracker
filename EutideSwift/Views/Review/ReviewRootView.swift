@@ -14,6 +14,9 @@ struct ReviewRootView: View {
                         weekNavigation
                             .padding(.horizontal)
 
+                        CrystalBallSection(stats: vm.effStats)
+                            .padding(.horizontal)
+
                         TimeCategoryDonutView(stats: week)
                             .padding(.horizontal)
 

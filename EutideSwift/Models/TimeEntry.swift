@@ -9,11 +9,13 @@ struct TimeEntry: Codable, Identifiable, Equatable {
     var hobby: String
     var color: String         // hex
     var notes: String?
-    var mood: Int?            // 1-5
+    var mood: Int?            // 1-5（旧量表，保留兼容）
+    var moodLabel: Mood?      // 新五档情绪（mood_label）
     var createdAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, date, hobby, color, notes, mood
+        case moodLabel = "mood_label"
         case userId = "user_id"
         case startTime = "start_time"
         case endTime = "end_time"

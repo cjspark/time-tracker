@@ -96,6 +96,7 @@ enum PrefsKey: String {
     case hobbyDomainMap          = "hobby_domain_map"    // [String: String] label → domain UUID
     case hobbyPriority           = "hobby_priority"      // [String] ordered labels, index 0 = highest
     case domainEfficiency        = "domain_efficiency"   // [String: String] "domainId_year" → label
+    case hobbyEfficiency         = "hobby_efficiency"    // [String: [String]] label → up to 2 Efficiency rawValues
 }
 
 // MARK: - AnyEncodable / AnyDecodable helpers
@@ -107,6 +108,7 @@ struct AnyEncodable: Encodable {
         switch value {
         case let v as [String]:           try c.encode(v)
         case let v as [String: String]:   try c.encode(v)
+        case let v as [String: [String]]: try c.encode(v)
         case let v as [[String: String]]: try c.encode(v)
         case let v as String:             try c.encode(v)
         case let v as Int:                try c.encode(v)
@@ -122,6 +124,7 @@ struct AnyDecodable: Decodable, Encodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.singleValueContainer()
         if let v = try? c.decode([String].self)             { value = v; return }
+        if let v = try? c.decode([String: [String]].self)   { value = v; return }
         if let v = try? c.decode([String: String].self)     { value = v; return }
         if let v = try? c.decode([[String: String]].self)   { value = v; return }
         if let v = try? c.decode(String.self)               { value = v; return }
@@ -135,6 +138,7 @@ struct AnyDecodable: Decodable, Encodable {
         switch value {
         case let v as [String]:           try c.encode(v)
         case let v as [String: String]:   try c.encode(v)
+        case let v as [String: [String]]: try c.encode(v)
         case let v as [[String: String]]: try c.encode(v)
         case let v as String:             try c.encode(v)
         case let v as Int:                try c.encode(v)

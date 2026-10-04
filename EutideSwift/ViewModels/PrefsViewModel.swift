@@ -18,6 +18,7 @@ class PrefsViewModel: ObservableObject {
     @Published var timeCategoryMap: [String: String] = [:]
     @Published var hobbyDomainMap: [String: String]  = [:]  // label → domain UUID string
     @Published var hobbyPriority: [String]           = []   // ordered labels, index 0 = highest
+    @Published var hobbyEfficiencyMap: [String: [String]] = [:]  // label → up to 2 Efficiency rawValues
 
     private var svc: PrefsService { PrefsService.shared }
 
@@ -34,13 +35,14 @@ class PrefsViewModel: ObservableObject {
         async let tc  = svc.get(.hobbyTimeCategory,    as: [String: String].self,      fallback: [:])
         async let dm  = svc.get(.hobbyDomainMap,       as: [String: String].self,      fallback: [:])
         async let hp  = svc.get(.hobbyPriority,        as: [String].self,              fallback: [])
+        async let he  = svc.get(.hobbyEfficiency,      as: [String: [String]].self,    fallback: [:])
 
         let (a, b, c, d, e, f, g, h, i, j) = await (cc, ch, hh, hc, cr, co, lr, ia, ord, tc)
-        let (k, l) = await (dm, hp)
+        let (k, l, m) = await (dm, hp, he)
         customCategories = a; customHobbies = b; hiddenHobbies = c; hiddenCategories = d
         catRenames = e; colorOverrides = f; labelRenames = g; inactiveHobbies = h
         catOrder = i; timeCategoryMap = j
-        hobbyDomainMap = k; hobbyPriority = l
+        hobbyDomainMap = k; hobbyPriority = l; hobbyEfficiencyMap = m
     }
 
     // Resolved hobbies
@@ -165,5 +167,21 @@ class PrefsViewModel: ObservableObject {
 
     func hobbies(in domainId: UUID) -> [HobbyItemMeta] {
         resolvedHobbiesWithMeta.filter { $0.domainId == domainId }
+    }
+
+    // MARK: - Efficiency tags (活动最多 2 个)
+
+    func efficiencies(for hobbyLabel: String) -> [Efficiency] {
+        (hobbyEfficiencyMap[hobbyLabel] ?? []).compactMap { Efficiency(rawValue: $0) }
+    }
+
+    func setEfficiencies(_ effs: [Efficiency], for hobbyLabel: String) async {
+        let capped = Array(effs.prefix(2))
+        if capped.isEmpty {
+            hobbyEfficiencyMap.removeValue(forKey: hobbyLabel)
+        } else {
+            hobbyEfficiencyMap[hobbyLabel] = capped.map { $0.rawValue }
+        }
+        await svc.set(.hobbyEfficiency, value: hobbyEfficiencyMap)
     }
 }

@@ -1,11 +1,19 @@
 import SwiftUI
 import Combine
 
+/// 复盘情绪维度：每类效率的时长 + 情绪分布。
+struct EffStat {
+    var minutes: Int = 0
+    var byMood: [Mood: Int] = [:]
+    var noMood: Int = 0        // 有记录但没标情绪
+}
+
 @MainActor
 class ReviewViewModel: ObservableObject {
     @Published var weekOffset = 0
     @Published var currentWeek: WeekStats?
     @Published var averageWeek: WeekStats?
+    @Published var effStats: [Efficiency: EffStat] = [:]
     @Published var isLoading = false
 
     func load(prefs: PrefsViewModel) async {
@@ -27,12 +35,14 @@ class ReviewViewModel: ObservableObject {
             let timeCatMap = prefs.timeCategoryMap
             let labelRenames = prefs.labelRenames
 
+            let weekEntries = entries.filter { weekStrings.contains($0.date) }
             currentWeek = buildWeekStats(
                 dates: weekDates,
-                entries: entries.filter { weekStrings.contains($0.date) },
+                entries: weekEntries,
                 timeCatMap: timeCatMap,
                 labelRenames: labelRenames
             )
+            effStats = buildEffStats(entries: weekEntries, effMap: prefs.hobbyEfficiencyMap)
 
             // 4-week average
             var priorStats: [WeekStats] = []
@@ -84,8 +94,23 @@ class ReviewViewModel: ObservableObject {
                           untracked: weekUntracked, byDay: byDay)
     }
 
-    private func averageOf(_ weeks: [WeekStats]) -> WeekStats {
-        guard !weeks.isEmpty else {
+    private func buildEffStats(entries: [TimeEntry], effMap: [String: [String]]) -> [Efficiency: EffStat] {
+        var result: [Efficiency: EffStat] = [:]
+        for e in entries {
+            let effs = (effMap[e.hobby] ?? []).compactMap { Efficiency(rawValue: $0) }
+            let dur = e.durationMinutes
+            for eff in effs {   // 最多 2 个，各算 100%
+                var stat = result[eff] ?? EffStat()
+                stat.minutes += dur
+                if let m = e.moodLabel { stat.byMood[m, default: 0] += dur }
+                else { stat.noMood += dur }
+                result[eff] = stat
+            }
+        }
+        return result
+    }
+
+    private func averageOf(_ weeks: [WeekStats]) -> WeekStats {        guard !weeks.isEmpty else {
             return WeekStats(weekLabel: "4周均值", weekStart: Date(), totalMinutes: 0,
                              byCategory: [:], untracked: 0, byDay: [])
         }
