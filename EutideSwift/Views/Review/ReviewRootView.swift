@@ -34,6 +34,7 @@ struct ReviewRootView: View {
                         .padding(.top, 60)
                 }
             }
+            .background(EU.bgPage)
             .navigationTitle("复盘")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -96,7 +97,7 @@ struct TimeCategoryDonutView: View {
     private var allItems: [ChartItem] {
         var result = trackedItems
         if stats.untracked > 0 {
-            result.append(ChartItem(name: "未追踪", minutes: stats.untracked, colorHex: "#9CA3AF"))
+            result.append(ChartItem(name: "未追踪", minutes: stats.untracked, colorHex: "#D2CEC4"))
         }
         return result
     }
@@ -162,8 +163,8 @@ struct TimeCategoryDonutView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
+        .background(EU.bgCard)
+        .cornerRadius(EU.radiusCard)
     }
 
     private func minuteLabel(_ mins: Int) -> String {
@@ -197,7 +198,7 @@ struct DailyBarChartView: View {
             }
             if day.untracked > 0 {
                 result.append(BarEntry(dayLabel: label, minutes: day.untracked,
-                                       seriesName: "未追踪", colorHex: "#9CA3AF"))
+                                       seriesName: "未追踪", colorHex: "#D2CEC4"))
             }
         }
         return result
@@ -227,15 +228,15 @@ struct DailyBarChartView: View {
                         }
                     }
                     HStack(spacing: 4) {
-                        Circle().fill(Color(hex: "#9CA3AF")).frame(width: 8, height: 8)
+                        Circle().fill(Color(hex: "#D2CEC4")).frame(width: 8, height: 8)
                         Text("未追踪").font(.system(size: 10)).foregroundColor(.secondary)
                     }
                 }
             }
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
+        .background(EU.bgCard)
+        .cornerRadius(EU.radiusCard)
     }
 }
 
@@ -274,7 +275,7 @@ struct CategoryComparisonView: View {
 
                         Text(diffLabel(curr: curr, avg: avg))
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(curr >= avg ? .green : .red)
+                            .foregroundColor(curr >= avg ? EU.accent : EU.terracotta)
                             .frame(width: 50, alignment: .trailing)
                     }
 
@@ -291,8 +292,8 @@ struct CategoryComparisonView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
+        .background(EU.bgCard)
+        .cornerRadius(EU.radiusCard)
     }
 
     private func diffLabel(curr: Int, avg: Int) -> String {
