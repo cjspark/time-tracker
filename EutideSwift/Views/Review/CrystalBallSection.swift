@@ -17,19 +17,19 @@ struct CrystalBallSection: View {
         VStack(alignment: .leading, spacing: 14) {
             Text("情绪 × 效率").font(.headline)
 
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(order) { eff in ballColumn(eff) }
+            }
+
             if !hasData {
-                Text("还没有带效率标签的活动记录。\n去活动页给活动打上效率标签、记录时标个心情，这里就会亮起来。")
-                    .font(.system(size: 13)).foregroundColor(EU.textMuted)
+                Text("给活动打上效率标签、记录时标个心情，球就会蓄满、显色。")
+                    .font(.system(size: 12)).foregroundColor(EU.textFaint)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.vertical, 4)
-            } else {
-                HStack(alignment: .top, spacing: 12) {
-                    ForEach(order) { eff in ballColumn(eff) }
-                }
-                if let sel = selected, let stat = stats[sel] {
-                    detail(eff: sel, stat: stat)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+            }
+
+            if let sel = selected, let stat = stats[sel], stat.minutes > 0 {
+                detail(eff: sel, stat: stat)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding()
@@ -47,6 +47,7 @@ struct CrystalBallSection: View {
                 .frame(width: 62, height: 62)
                 .contentShape(Circle())
                 .onTapGesture {
+                    guard stat.minutes > 0 else { return }
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                         selected = (selected == eff) ? nil : eff
                     }
